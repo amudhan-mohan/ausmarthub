@@ -1,0 +1,832 @@
+* {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(2px);
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.3);
+}
+
+.btn {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border: none;
+    padding: 0.65rem 1.25rem;
+    border-radius: 2rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.btn:hover {
+    transform: scale(0.98);
+    filter: brightness(1.05);
+}
+
+.btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+}
+
+.input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 1rem;
+    padding: 0.6rem 1rem;
+    width: 100%;
+    outline: none;
+    font-size: 0.9rem;
+}
+
+.input:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.stat-card {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.2));
+    border-radius: 1.25rem;
+    text-align: center;
+    padding: 1rem;
+}
+
+.badge {
+    background: #1f2937;
+    border-radius: 2rem;
+    padding: 0.2rem 0.7rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.theme-transition {
+    transition: background 0.25s, color 0.2s;
+}
+
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 10px;
+}
+
+.hidden {
+    display: none;
+}
+
+.toast-message {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1f2937;
+    backdrop-filter: blur(8px);
+    padding: 10px 20px;
+    border-radius: 40px;
+    font-size: 14px;
+    z-index: 9999;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    font-weight: 500;
+}
+
+/* ======================= DARK MODE ======================= */
+body.dark {
+    background: linear-gradient(135deg, #0b0f1a 0%, #0a0c15 100%);
+    color: #e5e7eb;
+}
+
+body.dark .card {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .stat-card {
+    background: rgba(0, 0, 0, 0.4);
+}
+
+body.dark .input {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: #f3f4f6;
+}
+
+body.dark .input::placeholder {
+    color: #9ca3af;
+}
+
+body.dark .btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e5e7eb;
+}
+
+/* Dark Mode Text Colors - Explicit Overrides */
+body.dark .text-gray-300,
+body.dark .text-gray-400,
+body.dark .text-gray-500,
+body.dark .text-gray-600 {
+    color: #d1d5db !important;
+}
+
+body.dark .text-gray-700,
+body.dark .text-gray-800,
+body.dark .text-gray-900 {
+    color: #f3f4f6 !important;
+}
+
+body.dark .text-gray-200 {
+    color: #e5e7eb !important;
+}
+
+body.dark .text-gray-100 {
+    color: #ffffff !important;
+}
+
+/* Dark Mode Colored Text */
+body.dark .text-blue-400,
+body.dark .text-blue-500,
+body.dark .text-blue-600 {
+    color: #60a5fa !important;
+}
+
+body.dark .text-green-400,
+body.dark .text-green-500,
+body.dark .text-green-600 {
+    color: #4ade80 !important;
+}
+
+body.dark .text-red-400,
+body.dark .text-red-500,
+body.dark .text-red-600 {
+    color: #f87171 !important;
+}
+
+body.dark .text-yellow-400,
+body.dark .text-yellow-500,
+body.dark .text-yellow-600 {
+    color: #facc15 !important;
+}
+
+body.dark .text-purple-400,
+body.dark .text-purple-500,
+body.dark .text-purple-600 {
+    color: #c084fc !important;
+}
+
+/* Dark Mode Background Overlays */
+body.dark .bg-white\/5 {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+body.dark .bg-black\/5 {
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+/* Dark Mode Border Colors */
+body.dark .border-white\/10 {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark .border-white\/20 {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark Mode SVG Icons */
+body.dark svg {
+    stroke: #e5e7eb;
+}
+
+body.dark .btn svg {
+    stroke: white;
+}
+
+/* ======================= LIGHT MODE ======================= */
+body.light {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    color: #1f2937;
+}
+
+body.light .card {
+    background: white;
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+body.light .stat-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+}
+
+body.light .input {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+body.light .input::placeholder {
+    color: #94a3b8;
+}
+
+body.light .btn-secondary {
+    background: #e2e8f0;
+    color: #1e293b;
+}
+
+body.light .badge {
+    background: #e2e8f0;
+    color: #1f2937;
+}
+
+body.light .toast-message {
+    background: #1f2937;
+    color: white;
+}
+
+/* Light Mode Text Colors */
+body.light .text-gray-300,
+body.light .text-gray-400,
+body.light .text-gray-500,
+body.light .text-gray-600 {
+    color: #4b5563 !important;
+}
+
+body.light .text-gray-700,
+body.light .text-gray-800,
+body.light .text-gray-900 {
+    color: #111827 !important;
+}
+
+body.light .text-gray-200 {
+    color: #374151 !important;
+}
+
+body.light .text-gray-100 {
+    color: #1f2937 !important;
+}
+
+/* Light Mode Colored Text */
+body.light .text-blue-400,
+body.light .text-blue-500,
+body.light .text-blue-600 {
+    color: #2563eb !important;
+}
+
+body.light .text-green-400,
+body.light .text-green-500,
+body.light .text-green-600 {
+    color: #16a34a !important;
+}
+
+body.light .text-red-400,
+body.light .text-red-500,
+body.light .text-red-600 {
+    color: #dc2626 !important;
+}
+
+body.light .text-yellow-400,
+body.light .text-yellow-500,
+body.light .text-yellow-600 {
+    color: #ca8a04 !important;
+}
+
+body.light .text-purple-400,
+body.light .text-purple-500,
+body.light .text-purple-600 {
+    color: #9333ea !important;
+}
+
+/* Light Mode Background Overlays */
+body.light .bg-white\/5 {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+body.light .bg-black\/5 {
+    background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Light Mode Border Colors */
+body.light .border-white\/10 {
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+/* Light Mode SVG Icons */
+/* body.light svg {
+    stroke: #374151;
+} */
+
+body.light .btn svg {
+    stroke: white;
+}
+
+
+/* Dropdown Styles */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.2rem;
+    cursor: pointer;
+}
+
+body.dark select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e5e7eb'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+}
+
+select:focus {
+    outline: none;
+}
+
+/* Card border fixes for dark mode */
+body.dark .card {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.light .card {
+    border-color: #e2e8f0;
+}
+
+/* Vision & Mission specific styles */
+.vision-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vision-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+body.dark .vision-card:hover {
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom Select Dropdown */
+select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 1.2rem;
+    cursor: pointer;
+}
+
+body.dark select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-color: #1f2937;
+    color: #e5e7eb;
+}
+
+select:focus {
+    outline: none;
+    ring: 2px solid #3b82f6;
+}
+/* ======================= BADGE FIXES ======================= */
+
+/* Fix for the Institutional Goals badge */
+.badge-default {
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+body.dark .badge-default {
+    background-color: #374151;
+    color: #e5e7eb;
+}
+
+/* Ensure all badge-like elements are visible in dark mode */
+body.dark .bg-gray-100 {
+    background-color: #1f2937 !important;
+}
+
+body.dark .text-gray-600 {
+    color: #d1d5db !important;
+}
+
+body.dark .bg-gray-200 {
+    background-color: #374151 !important;
+}
+
+body.dark .text-gray-700 {
+    color: #e5e7eb !important;
+}
+
+/* ======================= VISION & MISSION DARK MODE FIXES ======================= */
+
+/* Ensure text in cards is visible in dark mode */
+body.dark .card .text-gray-700,
+body.dark .card .text-gray-600,
+body.dark .card .text-gray-500,
+body.dark .card p:not(.text-blue-700):not(.text-green-700),
+body.dark .card li {
+    color: #e5e7eb !important;
+}
+
+/* Vision & Mission specific dark mode text */
+body.dark .bg-blue-50,
+body.dark .bg-green-50 {
+    background-color: rgba(59, 130, 246, 0.1) !important;
+}
+
+body.dark .bg-blue-50 p,
+body.dark .bg-blue-50 li,
+body.dark .bg-green-50 p,
+body.dark .bg-green-50 li {
+    color: #e5e7eb !important;
+}
+
+/* Ensure mission list items are visible */
+body.dark .list-disc li {
+    color: #d1d5db !important;
+}
+
+/* Dropdown text visibility */
+body.dark select {
+    color: #f3f4f6 !important;
+    background-color: #1f2937 !important;
+}
+
+body.dark select option {
+    background-color: #1f2937;
+    color: #e5e7eb;
+}
+
+/* Card content visibility */
+body.dark .card .leading-relaxed {
+    color: #e5e7eb !important;
+}
+
+body.dark .card .space-y-4 p,
+body.dark .card .space-y-4 li {
+    color: #e5e7eb !important;
+}
+
+/* Border visibility in dark mode */
+body.dark .border-b {
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Heading colors in dark mode */
+body.dark h1, 
+body.dark h2, 
+body.dark h3, 
+body.dark h4,
+body.dark .font-bold {
+    color: #f3f4f6 !important;
+}
+
+/* Specific fix for vision and mission text */
+body.dark .bg-blue-50 .text-gray-700,
+body.dark .bg-green-50 .text-gray-700,
+body.dark .bg-blue-50 .text-gray-800,
+body.dark .bg-green-50 .text-gray-800 {
+    color: #e5e7eb !important;
+}
+
+/* Make sure the mission list items are white in dark mode */
+body.dark ul.list-disc li {
+    color: #d1d5db !important;
+}
+
+/* Fix for the faculty/department names */
+body.dark .card .text-gray-800 {
+    color: #f3f4f6 !important;
+}
+
+/* Ensure all paragraph text is visible */
+body.dark p {
+    color: #e5e7eb !important;
+}
+
+/* Fix for the colored text in dark mode */
+body.dark .text-blue-700 {
+    color: #60a5fa !important;
+}
+
+body.dark .text-green-700 {
+    color: #4ade80 !important;
+}
+
+body.dark .text-purple-600 {
+    color: #c084fc !important;
+}
+
+/* Fix for the message card when no department selected */
+body.dark .text-center .text-gray-600 {
+    color: #9ca3af !important;
+}
+
+/* ================= QUICK CALCULATOR ================= */
+.calc-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    user-select: none;
+}
+
+.calc-col-2 {
+    grid-column: span 2;
+}
+
+.calc-btn {
+    padding: 1.1rem 0;
+    border-radius: 1rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s ease, filter 0.2s ease, background-color 0.2s ease;
+}
+
+.calc-btn:active {
+    transform: scale(0.92);
+}
+
+.calc-display-container {
+    padding: 1.5rem 1rem;
+    border-radius: 1.25rem;
+    margin-bottom: 1.25rem;
+    overflow-x: auto;
+    white-space: nowrap;
+}
+
+.calc-display-text {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: right;
+    letter-spacing: 0.05em;
+}
+
+/* --- Light Mode Colors --- */
+body.light .calc-display-container {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+}
+body.light .calc-display-text { color: #1f2937; }
+
+body.light .calc-num {
+    background: #ffffff;
+    color: #1f2937;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+    border: 1px solid #f1f5f9;
+}
+body.light .calc-op {
+    background: #eff6ff;
+    color: #2563eb;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.1);
+}
+body.light .calc-del {
+    background: #fee2e2;
+    color: #dc2626;
+    box-shadow: 0 2px 6px rgba(220,38,38,0.1);
+}
+body.light .calc-eq {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+}
+
+/* --- Dark Mode Colors --- */
+body.dark .calc-display-container {
+    background: #111827;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: inset 0 4px 10px rgba(0,0,0,0.4);
+}
+body.dark .calc-display-text { color: #f3f4f6; }
+
+body.dark .calc-num {
+    background: #1f2937;
+    color: #f3f4f6;
+    border: 1px solid rgba(255,255,255,0.05);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+body.dark .calc-op {
+    background: rgba(59,130,246,0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59,130,246,0.1);
+}
+body.dark .calc-del {
+    background: rgba(239,68,68,0.15);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.1);
+}
+body.dark .calc-eq {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    color: #ffffff;
+    box-shadow: 0 4px 15px rgba(37,99,235,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ================= FULLSCREEN SCIENTIFIC CALC (iOS STYLE) ================= */
+.sci-fullscreen-container {
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem;
+    background-color: #000000;
+}
+body.light .sci-fullscreen-container { background-color: #f3f4f6; }
+
+/* Consolidated Display Area */
+.sci-display-area {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 1rem;
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    border-radius: 0.5rem;
+    background: #e5e7eb; 
+    color: #1f2937;
+}
+
+body.dark .sci-display-area {
+    background: #111111;
+    color: #ffffff;
+}
+
+/* Updated Grid: Added 'flex: 1' so it grows to fill the remaining screen space */
+.sci-ios-grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 0.25rem;
+    flex: 1; 
+    min-height: 0;
+}
+
+/* Buttons */
+.s-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    /* Removed fixed min-height, let them fill the grid cells */
+}
+
+.s-btn:active { filter: brightness(1.3); }
+
+/* --- BUTTON COLOR PALETTE --- */
+/* Scientific Functions */
+.s-sci { background-color: #212121; color: #ffffff; }
+body.light .s-sci { background-color: #e5e7eb; color: #000000; }
+
+/* Numbers */
+.s-num { background-color: #333333; color: #ffffff; font-size: 1.2rem; }
+body.light .s-num { background-color: #ffffff; color: #000000; }
+
+/* Top Row (AC, DEL, %) */
+.s-top { background-color: #a5a5a5; color: #000000; font-size: 1.1rem; }
+body.light .s-top { background-color: #d1d5db; color: #000000; }
+
+/* Blue Operators */
+.s-op  { background-color: #2563eb; color: #ffffff; font-size: 1.5rem; }
+
+/* Wide Zero */
+.s-zero {
+    grid-column: span 2;
+}
+
+/* ================= POPUP / MODAL DARK MODE FIX ================= */
+/* 1. Modal Background & Border */
+body.dark #custom-confirm-modal > div {
+    background-color: #1c1c1e !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
+/* 2. Modal Title Text */
+body.dark #custom-confirm-modal h3 {
+    color: #f9fafb !important; /* Bright White */
+}
+
+/* 3. Modal Message Text */
+body.dark #custom-confirm-modal p {
+    color: #9ca3af !important; /* Soft Gray */
+}
+
+/* 4. Cancel Button styling */
+body.dark #confirm-cancel-btn {
+    background-color: #27272a !important; /* Dark Gray */
+    color: #e4e4e7 !important; /* Light Gray text */
+}
+
+body.dark #confirm-cancel-btn:hover {
+    background-color: #3f3f46 !important; /* Slightly lighter gray on hover */
+}
+
+/* 5. Warning Icon Colors (Light Mode) */
+#custom-confirm-modal .rounded-full {
+    background-color: #fee2e2 !important; /* Light red background */
+    color: #ef4444 !important; /* Bright red icon */
+}
+
+/* 6. Warning Icon Colors (Dark Mode) */
+body.dark #custom-confirm-modal .rounded-full {
+    background-color: rgba(153, 27, 27, 0.3) !important; /* Subtle dark red background */
+    color: #f87171 !important; /* Soft, bright red icon for high contrast */
+}
+
+/* ================= INPUT MODAL DARK MODE ================= */
+/* Background & Borders */
+body.dark #custom-input-modal > div {
+    background-color: #1c1c1e !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Modal Title */
+body.dark #custom-input-modal h3 {
+    color: #f9fafb !important; 
+}
+
+/* User Icon Colors */
+body.dark #custom-input-modal .rounded-full {
+    background-color: rgba(59, 130, 246, 0.2) !important; /* Dark Blue */
+    color: #60a5fa !important; /* Light Blue */
+}
+
+/* Input Field styling for dark mode */
+body.dark #modal-input-field {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    color: #ffffff !important;
+}
+
+/* Cancel Button */
+body.dark #input-cancel-btn {
+    background-color: #27272a !important;
+    color: #e4e4e7 !important;
+}
+body.dark #input-cancel-btn:hover { background-color: #3f3f46 !important; }
+
+/* ================= NOTE EDITOR DARK MODE FIX ================= */
+/* 1. Main Editor Card Background */
+body.dark #note-editor-card {
+    background-color: #1c1c1e !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* 2. Note Title Text & Bottom Border */
+body.dark #note-title {
+    color: #ffffff !important;
+    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+body.dark #note-title::placeholder {
+    color: #4b5563 !important; /* Darker gray placeholder */
+}
+
+/* 3. Note Body Text */
+body.dark #note-body {
+    color: #d1d5db !important; /* Light gray text for readability */
+}
+body.dark #note-body::placeholder {
+    color: #4b5563 !important;
+}
+
+/* 4. Save Status Text */
+body.dark #note-save-status {
+    color: #6b7280 !important;
+}
+
+/* 5. Done Button */
+body.dark #note-done-btn {
+    background-color: rgba(217, 119, 6, 0.2) !important; /* Subtle amber background */
+    color: #fbbf24 !important; /* Bright amber text */
+}
+
+/* ================= FOOTER DARK MODE FIX ================= */
+body.dark footer {
+    /* Uses a semi-transparent black to keep the glassmorphism blur effect */
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    border-top-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+body.dark footer p {
+    color: #9ca3af !important; /* Soft gray-400 so it is perfectly readable */
+}
