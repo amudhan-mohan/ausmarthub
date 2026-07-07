@@ -1285,23 +1285,34 @@ let renderTimer;
 function smartRender() {
     clearTimeout(renderTimer);
     renderTimer = setTimeout(() => {
+        let activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT')) {
+            // Attach a one-time listener to safely render AS SOON AS they click away
+            activeEl.addEventListener('blur', function onBlur() {
+                activeEl.removeEventListener('blur', onBlur);
+                setTimeout(render, 100); 
+            }, { once: true });
+            return; 
+        }
+        
         render();
-    }, 500);
+    }, 200);
 }
 
 function updateSubject(i, key, val) {
     if (val === "") {
         semesters[currentSemester].subjects[i][key] = "";
-        return;
+    } else {
+        if (key === "credit") {
+            val = Number(val);
+            if (isNaN(val) || val < 0) return;
+        }
+        semesters[currentSemester].subjects[i][key] = val;
     }
-
-    if (key === "credit") {
-        val = Number(val);
-        if (isNaN(val) || val < 0) return;
-    }
-
-    semesters[currentSemester].subjects[i][key] = val;
     save();
+    if (key === 'grade' && document.activeElement && document.activeElement.tagName === 'SELECT') {
+        document.activeElement.blur();
+    }
     smartRender();
 }
 
@@ -2543,3 +2554,17 @@ document.addEventListener("DOMContentLoaded", function () {
         render();
     }
 });
+
+// ================= KEYBOARD AUTO-DISMISS FIX (SAFE MODE) =================
+document.addEventListener('touchstart', function(event) {
+    // If the user tapped on anything interactive, DO NOTHING. Let the phone handle it.
+    if (event.target.closest('input, select, textarea, button')) {
+        return; 
+    }
+    
+    // ONLY if they tapped the empty background, close the keyboard/dropdown
+    let activeEl = document.activeElement;
+    if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) {
+        activeEl.blur();
+    }
+}, { passive: true });
