@@ -13,8 +13,8 @@ function safeJSONParse(key, fallback) {
 }
 
 let existingSemesters = safeJSONParse("semesters", null);
-let defaultProfiles = existingSemesters && existingSemesters.length > 0 
-    ? [{ id: Date.now().toString(), name: "My Profile", semesters: existingSemesters }] 
+let defaultProfiles = existingSemesters && existingSemesters.length > 0
+    ? [{ id: Date.now().toString(), name: "My Profile", semesters: existingSemesters }]
     : [];
 
 let profiles = safeJSONParse("cgpa_profiles", defaultProfiles);
@@ -41,27 +41,174 @@ let calcHistory = safeJSONParse("calcHistory", []);
 // NOTES STATE
 let notes = safeJSONParse("smarthub_notes", []);
 let currentNoteIndex = null; // Tracks which note is being edited
+let notesViewMode = localStorage.getItem("smarthub_notes_view") || "card"; // Default to card view
+
+// View Toggle Function
+function setNotesViewMode(mode) {
+    notesViewMode = mode;
+    localStorage.setItem("smarthub_notes_view", mode);
+    render(); // Re-render the screen to show the new layout
+}
+
+// ================= POMODORO STATE =================
+let customStudyTime = safeJSONParse("pomoStudyTime", 25);
+let customBreakTime = safeJSONParse("pomoBreakTime", 5);
+
+let pomoMode = "study"; // "study" or "break"
+let pomoTimeLeft = customStudyTime * 60;
+let pomoInterval = null;
+let isPomoRunning = false;
+
+// ================= TIMETABLE STATE =================
+let defaultTimetable = { Monday: [], Tuesday: [], Wednesday: [], Thursday: [], Friday: [] };
+let timetable = safeJSONParse("smarthub_timetable", defaultTimetable);
+
+const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+let currentDayName = DAYS_OF_WEEK[new Date().getDay()];
+
+// Smart default: If weekend, show Monday. Otherwise, show today.
+let selectedTabDay = (currentDayName === "Saturday" || currentDayName === "Sunday") ? "Monday" : currentDayName;
+
+// Helper: Convert "14:30" to 870 (minutes from midnight) for easy math
+function timeToMins(timeStr) {
+    if (!timeStr) return 0;
+    let [h, m] = timeStr.split(':').map(Number);
+    return (h * 60) + m;
+}
+
+// Helper: Format "14:30" to "02:30 PM"
+function formatAMPM(timeStr) {
+    if (!timeStr) return "";
+    let [h, m] = timeStr.split(':');
+    let ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12;
+    return `${h}:${m} ${ampm}`;
+}
+
+function getUpNextClass() {
+    let today = DAYS_OF_WEEK[new Date().getDay()];
+    // Return an object that can hold both a current and a next class
+    let result = { current: null, next: null };
+
+    if (!timetable[today] || timetable[today].length === 0) return result;
+
+    let now = new Date();
+    let currentMins = (now.getHours() * 60) + now.getMinutes();
+
+    // Sort today's classes by start time
+    let todaysClasses = [...timetable[today]].sort((a, b) => timeToMins(a.start) - timeToMins(b.start));
+
+    for (let i = 0; i < todaysClasses.length; i++) {
+        let c = todaysClasses[i];
+        let startMins = timeToMins(c.start);
+        let endMins = timeToMins(c.end);
+
+        if (currentMins >= startMins && currentMins <= endMins) {
+            // Class is happening right now
+            result.current = c;
+
+            // MAGIC: If it ends in 5 minutes or less, also grab the next class so the student can prepare!
+            if ((endMins - currentMins) <= 5) {
+                if (i + 1 < todaysClasses.length) {
+                    result.next = todaysClasses[i + 1];
+                }
+            }
+            break; // We found the current time block, stop searching
+        } else if (currentMins < startMins) {
+            // This is the first class in the future
+            result.next = c;
+            break;
+        }
+    }
+
+    return result;
+}
+
+// ================= ASSIGNMENT STATE =================
+let assignments = safeJSONParse("smarthub_assignments", []);
+
+// Helper: Calculate days left for the badge
+function getDaysLeftText(dateString) {
+    if (!dateString) return "";
+    let dueDate = new Date(dateString);
+    dueDate.setHours(0, 0, 0, 0);
+
+    let today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let diffTime = dueDate - today;
+    let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) return { text: "Due Today", color: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30" };
+    if (diffDays === 1) return { text: "Due Tomorrow", color: "text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30" };
+    if (diffDays < 0) return { text: `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) > 1 ? 's' : ''}`, color: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30" };
+
+    return { text: `Due in ${diffDays} days`, color: "text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30" };
+}
+
+// Helper: Get priority colors
+function getPriorityStyle(priority) {
+    if (priority === 'High') return "text-red-600 border-red-200 bg-red-50 dark:border-red-900/50 dark:bg-red-900/10 dark:text-red-400";
+    if (priority === 'Medium') return "text-amber-600 border-amber-200 bg-amber-50 dark:border-amber-900/50 dark:bg-amber-900/10 dark:text-amber-400";
+    return "text-green-600 border-green-200 bg-green-50 dark:border-green-900/50 dark:bg-green-900/10 dark:text-green-400";
+}
+
+// Add these to the very top of app.js
+let isPopupOpen = false;
+let currentAppScreen = 'home';
+let lastTimeBackPress = 0;
 
 // Theme
 let isDarkMode = localStorage.getItem("theme") === "dark";
 let chartInstance = null;
 
+// ================= UTILITIES =================
+// Helper function to escape HTML and prevent XSS
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+// Grade letter -> grade point lookup (used across CGPA, semester, and chart code)
+function getGP(g) {
+    return { "S": 10, "A": 9, "B": 8, "C": 7, "D": 6, "E": 5, "RA": 0 }[g];
+}
+
 // ================= THEME =================
 function applyTheme() {
     const root = document.body;
+    const htmlRoot = document.documentElement; // Added for Tailwind v4 compatibility
+
+    htmlRoot.style.colorScheme = isDarkMode ? "dark" : "light";
+
     if (isDarkMode) {
         root.classList.remove("light");
         root.classList.add("dark");
+
+        // Tell Tailwind CSS that dark mode is active
+        htmlRoot.classList.add("dark");
+
         const icon = document.getElementById("themeIcon");
         if (icon) icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
     } else {
         root.classList.remove("dark");
         root.classList.add("light");
+
+        // Tell Tailwind CSS that light mode is active
+        htmlRoot.classList.remove("dark");
+
         const icon = document.getElementById("themeIcon");
         if (icon) {
             icon.innerHTML = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
         }
     }
+
     localStorage.setItem("theme", isDarkMode ? "dark" : "light");
     render();
 }
@@ -98,12 +245,13 @@ let exitTimer = null;
 function exitApp() {
     if (exitTimer) {
         showConfirm(
-            "Exit App", 
-            "Are you sure you want to exit AU Smart Hub?", 
+            "Exit App",
+            "Are you sure you want to exit AU Smart Hub?",
             "Exit",
             () => {
                 if (navigator.app) navigator.app.exitApp();
-            }
+            },
+            "exit"
         );
     } else {
         showToast("Press back again to exit");
@@ -111,34 +259,125 @@ function exitApp() {
     }
 }
 
-function showToast(msg) {
-    let t = document.createElement("div");
-    t.innerHTML = msg;
-    t.className = "toast-message";
-    document.body.appendChild(t);
-    setTimeout(() => t.remove(), 2000);
+// ================= AUTO UPDATE CHECKER =================
+const CURRENT_APP_VERSION = "1.0.14";
+const GITHUB_REPO = "amudhan-mohan/ausmarthub";
+
+async function checkForUpdates() {
+    try {
+        // Fetch the latest release data from GitHub API
+        let response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+        let data = await response.json();
+
+        if (data && data.tag_name) {
+            let latestVersion = data.tag_name.replace('v', '');
+
+            if (isNewerVersion(CURRENT_APP_VERSION, latestVersion)) {
+                // Show a quick toast notification
+                showToast(`Update v${latestVersion} is available!`);
+
+                // Show the modal after a short delay so the app finishes loading first
+                setTimeout(() => {
+                    showConfirm(
+                        "Update Available! 🚀",
+                        `A new version (v${latestVersion}) of AU Smart Hub is ready. Please update to get the latest features and bug fixes.`,
+                        "Download Update",
+                        () => {
+                            // Opens the GitHub release page in the device's default browser
+                            window.open(data.html_url, "_system");
+                        },
+                        "update" // Uses our new blue download icon
+                    );
+                }, 1500);
+            }
+        }
+    } catch (error) {
+        console.log("Could not check for updates (maybe offline).", error);
+    }
+}
+
+function isNewerVersion(current, latest) {
+    let currParts = current.split('.').map(Number);
+    let latestParts = latest.split('.').map(Number);
+
+    for (let i = 0; i < latestParts.length; i++) {
+        if (latestParts[i] > (currParts[i] || 0)) return true;
+        if (latestParts[i] < (currParts[i] || 0)) return false;
+    }
+    return false;
+}
+
+// ================= SHARED UI COMPONENTS (Toast + Modals) =================
+function showToast(message) {
+    // Remove any existing toast so they don't stack
+    let existing = document.getElementById('app-toast');
+    if (existing) existing.remove();
+
+    // Create the new toast
+    let toast = document.createElement('div');
+    toast.id = 'app-toast';
+
+    // The Magic Centering Classes: left-1/2 transform -translate-x-1/2
+    toast.className = 'fixed bottom-16 left-1/2 transform -translate-x-1/2 z-[9999] bg-[#0b1121]/90 backdrop-blur-md border border-white/10 text-white px-6 py-3 rounded-2xl shadow-2xl shadow-black/50 text-sm font-bold tracking-wide w-max opacity-0 translate-y-4 transition-all duration-300';
+    toast.innerText = message;
+
+    document.body.appendChild(toast);
+
+    // Animate it sliding up and fading in
+    requestAnimationFrame(() => {
+        toast.classList.remove('opacity-0', 'translate-y-4');
+    });
+
+    // Remove it after 2 seconds
+    setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-4');
+        setTimeout(() => toast.remove(), 300); // Wait for animation to finish before deleting
+    }, 2000);
 }
 
 // ================= CUSTOM UI CONFIRM MODAL =================
-function showConfirm(title, message, confirmText, onConfirm) {
+function showConfirm(title, message, confirmText, onConfirm, iconType = 'delete') {
     // Remove any existing modal just in case
     let existing = document.getElementById('custom-confirm-modal');
     if (existing) existing.remove();
+
+    let iconSvg = '';
+    if (iconType === 'exit') {
+        iconSvg = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 4h3a2 2 0 0 1 2 2v1m-5 13h3a2 2 0 0 0 2-2v-1M4.425 19.428l6 1.8A2 2 0 0 0 13 19.312V4.688a2 2 0 0 0-2.575-1.916l-6 1.8A2 2 0 0 0 3 6.488v11.024a2 2 0 0 0 1.425 1.916zM9.001 12H9m7 0h5m0 0-2-2m2 2-2 2"></path>
+        </svg>`;
+    } else if (iconType === 'update') {
+        iconSvg = `<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+        </svg>`;
+    } else {
+        iconSvg = `<svg width="28" height="28" viewBox="0 0 280 280" fill="currentColor">
+            <path d="M235.732,66.214l-28.006-13.301l1.452-3.057c6.354-13.379,0.639-29.434-12.74-35.789L172.316,2.611
+            c-6.48-3.079-13.771-3.447-20.532-1.042c-6.76,2.406-12.178,7.301-15.256,13.782l-1.452,3.057L107.07,5.106
+            c-14.653-6.958-32.239-0.698-39.2,13.955L60.7,34.155c-1.138,2.396-1.277,5.146-0.388,7.644c0.89,2.499,2.735,4.542,5.131,5.68
+            l74.218,35.25h-98.18c-2.797,0-5.465,1.171-7.358,3.229c-1.894,2.059-2.839,4.815-2.607,7.602l13.143,157.706
+            c1.53,18.362,17.162,32.745,35.588,32.745h73.54c18.425,0,34.057-14.383,35.587-32.745l11.618-139.408l28.205,13.396
+            c1.385,0.658,2.845,0.969,4.283,0.969c3.74,0,7.328-2.108,9.04-5.712l7.169-15.093C256.646,90.761,250.386,73.175,235.732,66.214z
+             M154.594,23.931c0.786-1.655,2.17-2.905,3.896-3.521c1.729-0.614,3.59-0.521,5.245,0.267l24.121,11.455
+            c3.418,1.624,4.878,5.726,3.255,9.144l-1.452,3.057l-36.518-17.344L154.594,23.931z M169.441,249.604
+            c-0.673,8.077-7.55,14.405-15.655,14.405h-73.54c-8.106,0-14.983-6.328-15.656-14.405L52.35,102.728h129.332L169.441,249.604z
+             M231.62,96.835l-2.878,6.06L83.057,33.701l2.879-6.061c2.229-4.695,7.863-6.698,12.554-4.469l128.661,61.108
+            C231.845,86.509,233.85,92.142,231.62,96.835z"/>
+        </svg>`;
+    }
 
     // Create the modal container
     let modal = document.createElement('div');
     modal.id = 'custom-confirm-modal';
     modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-200';
-    
+
     // Inject the UI
     modal.innerHTML = `
         <div class="bg-white dark:bg-[#1c1c1e] rounded-[2rem] p-6 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-200 border border-gray-100 dark:border-gray-800">
             <div class="w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 text-red-500 flex items-center justify-center mb-5 mx-auto">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                </svg>
+                ${iconSvg}
             </div>
-            
+                       
             <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2 text-center">${title}</h3>
             <p class="text-gray-500 dark:text-gray-400 text-sm mb-7 text-center leading-relaxed">${message}</p>
             
@@ -186,7 +425,7 @@ function showInputModal(title, placeholder, initialValue, confirmText, onConfirm
     let modal = document.createElement('div');
     modal.id = 'custom-input-modal';
     modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-200';
-    
+
     // Safety check for empty initial value
     let safeInitial = initialValue ? escapeHtml(initialValue) : "";
 
@@ -218,7 +457,7 @@ function showInputModal(title, placeholder, initialValue, confirmText, onConfirm
     document.body.appendChild(modal);
 
     let inputField = document.getElementById('modal-input-field');
-    
+
     // Auto-focus the input so the mobile keyboard pops up immediately
     setTimeout(() => {
         inputField.focus();
@@ -235,12 +474,12 @@ function showInputModal(title, placeholder, initialValue, confirmText, onConfirm
     const close = () => {
         modal.classList.add('opacity-0');
         modal.firstElementChild.classList.add('scale-95');
-        setTimeout(() => modal.remove(), 200); 
+        setTimeout(() => modal.remove(), 200);
     };
 
     // Attach click events
     document.getElementById('input-cancel-btn').onclick = close;
-    
+
     // Submit function
     const submit = () => {
         let val = inputField.value.trim();
@@ -255,24 +494,26 @@ function showInputModal(title, placeholder, initialValue, confirmText, onConfirm
     };
 
     document.getElementById('input-ok-btn').onclick = submit;
-    
+
     // Allow pressing "Enter" on the keyboard to save
     inputField.onkeypress = (e) => {
         if (e.key === 'Enter') submit();
     };
 }
 
-// ================= GREETING =================
+// ================= HOME SCREEN =================
+// ---- greeting helpers ----
 function getGreeting() {
     let h = new Date().getHours();
-    if (h < 12) return "Good Morning";
-    if (h < 18) return "Good Afternoon";
-    return "Good Evening";
+    if (h >= 5 && h < 12) return "Good Morning";
+    if (h >= 12 && h < 17) return "Good Afternoon";
+    if (h >= 17 && h < 20) return "Good Evening";
+    return "Good Night";
 }
 
 function getTimeBasedHillIcon() {
     const hour = new Date().getHours();
-    
+
     // Morning (5 AM to 11 AM) - Sun rising over hills
     if (hour >= 5 && hour < 12) {
         return `
@@ -284,7 +525,7 @@ function getTimeBasedHillIcon() {
             <path d="M2 20C4 16 8 16 12 20M10 20C12 14 18 14 22 20" stroke-linecap="round"/>
             <path d="M2 22h20" stroke-linecap="round"/>
         </svg>`;
-    } 
+    }
     // Afternoon (12 PM to 4 PM) - Sun high over hills
     else if (hour >= 12 && hour < 17) {
         return `
@@ -296,7 +537,7 @@ function getTimeBasedHillIcon() {
             <path d="M2 20C5 15 9 15 13 20M11 20C14 13 20 13 22 20" stroke-linecap="round"/>
             <path d="M2 22h20" stroke-linecap="round"/>
         </svg>`;
-    } 
+    }
     // Evening (5 PM to 7 PM) - Sun setting behind hills
     else if (hour >= 17 && hour < 20) {
         return `
@@ -308,7 +549,7 @@ function getTimeBasedHillIcon() {
             <path d="M2 20C6 14 10 14 14 20M10 20C13 15 18 15 22 20" stroke-linecap="round"/>
             <path d="M2 22h20" stroke-linecap="round"/>
         </svg>`;
-    } 
+    }
     // Night (8 PM to 4 AM) - Moon & stars over hills
     else {
         return `
@@ -322,7 +563,79 @@ function getTimeBasedHillIcon() {
         </svg>`;
     }
 }
-// ================= HOME =================
+
+// Generates ONLY the Timetable Widget HTML
+function generateTimetableWidgetHTML() {
+    let classesData = getUpNextClass();
+    let widgetHtml = "";
+
+    if (classesData.current || classesData.next) {
+        widgetHtml = `<div class="flex flex-col gap-3 mt-4">`;
+
+        if (classesData.current) {
+            let c = classesData.current;
+            widgetHtml += `
+                <div onclick="navigate('timetable')" class="card cursor-pointer transition-transform active:scale-95 border border-blue-500 shadow-lg shadow-blue-500/10">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Happening Now
+                        </span>
+                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400">
+                            ${formatAMPM(c.start)} - ${formatAMPM(c.end)}
+                        </span>
+                    </div>
+                    <h3 class="text-lg font-bold truncate text-gray-900 dark:text-white">${escapeHtml(c.subject)}</h3>
+                    <div class="flex items-center gap-1 mt-1 text-gray-500 dark:text-gray-400">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span class="text-sm font-medium">Room: ${escapeHtml(c.room)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (classesData.next) {
+            let c = classesData.next;
+            widgetHtml += `
+                <div onclick="navigate('timetable')" class="card cursor-pointer transition-transform active:scale-95">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                            🔵 Up Next
+                        </span>
+                        <span class="text-xs font-bold text-gray-500 dark:text-gray-400">
+                            ${formatAMPM(c.start)} - ${formatAMPM(c.end)}
+                        </span>
+                    </div>
+                    <h3 class="text-lg font-bold truncate text-gray-900 dark:text-white">${escapeHtml(c.subject)}</h3>
+                    <div class="flex items-center gap-1 mt-1 text-gray-500 dark:text-gray-400">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        <span class="text-sm font-medium">Room: ${escapeHtml(c.room)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        widgetHtml += `</div>`;
+    }
+    else if (DAYS_OF_WEEK[new Date().getDay()] === "Saturday" || DAYS_OF_WEEK[new Date().getDay()] === "Sunday") {
+        widgetHtml = `<div onclick="navigate('timetable')" class="card mt-4 text-center border-dashed border-2 border-gray-200 dark:border-gray-800 cursor-pointer text-gray-500 dark:text-gray-400 text-sm py-5"><span class="font-bold text-gray-700 dark:text-gray-300">Weekend!</span> No classes scheduled.</div>`;
+    } else {
+        widgetHtml = `<div onclick="navigate('timetable')" class="card mt-4 text-center border-dashed border-2 border-gray-200 dark:border-gray-800 cursor-pointer text-gray-500 dark:text-gray-400 text-sm py-5">No more classes today. Tap to setup schedule.</div>`;
+    }
+
+    return widgetHtml;
+}
+
+// ================= SEAMLESS TIMETABLE AUTO-UPDATE =================
+// Checks the time every 30 seconds. Silently updates only the widget DOM.
+setInterval(() => {
+    if (currentScreen === "home") {
+        let container = document.getElementById("home-timetable-container");
+        if (container) {
+            container.innerHTML = generateTimetableWidgetHTML();
+        }
+    }
+}, 30000);
+
 function renderHome() {
     return `
         <div class="card text-center relative overflow-hidden">
@@ -332,6 +645,11 @@ function renderHome() {
             
             <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">${getGreeting()}</h2>
             <p class="text-sm font-medium mt-1 text-gray-500 dark:text-gray-400">Welcome to AU Smart Hub</p>
+        </div>
+
+        <!-- This container allows seamless targeted updates -->
+        <div id="home-timetable-container">
+            ${generateTimetableWidgetHTML()}
         </div>
 
         <div class="grid grid-cols-2 gap-4 mt-4">
@@ -420,6 +738,14 @@ function renderHome() {
                 </div>
                 <h3 class="mt-2">Sci-Calc</h3>
             </div>
+            <div onclick="navigate('timetable')" class="card text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5">
+                <div class="flex justify-center mb-2">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <h3 class="mt-2">Timetable</h3>
+            </div>
             <div onclick="navigate('notes')" class="card text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5">
                 <div class="flex justify-center mb-2">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
@@ -427,6 +753,24 @@ function renderHome() {
                     </svg>
                 </div>
                 <h3 class="mt-2">My Notes</h3>
+            </div>
+            <div onclick="navigate('pomodoro')" class="card text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5">
+                <div class="flex justify-center mb-2">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-blue-500">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <h3 class="mt-2">Focus Timer</h3>
+            </div>
+            <div onclick="navigate('assignments')" class="card text-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5">
+                <div class="flex justify-center mb-2">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                    </svg>
+                </div>
+                <h3 class="mt-2">Assignments</h3>
             </div>
         </div>
     `;
@@ -472,7 +816,7 @@ function renderProfiles() {
         profiles.forEach((p, idx) => {
             let cgpaDisplay = calculateProfileCGPA(p.semesters);
             let initial = p.name.charAt(0).toUpperCase();
-            
+
             html += `
                 <div class="card flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition" onclick="openProfile(${idx})">
                     <div class="flex items-center gap-3">
@@ -551,10 +895,10 @@ function openProfile(idx) {
 
 function createProfile() {
     showInputModal(
-        "Create New Profile", 
-        "Enter student's name", 
+        "Create New Profile",
+        "Enter student's name",
         "", // No initial value
-        "Create", 
+        "Create",
         (name) => {
             profiles.push({
                 id: Date.now().toString(),
@@ -569,12 +913,12 @@ function createProfile() {
 
 function editProfile(idx) {
     let currentName = profiles[idx].name;
-    
+
     showInputModal(
-        "Edit Profile", 
-        "Enter student's name", 
+        "Edit Profile",
+        "Enter student's name",
         currentName, // Pass the current name so they can edit it
-        "Save Changes", 
+        "Save Changes",
         (newName) => {
             // Only save if the name actually changed
             if (newName !== currentName) {
@@ -588,8 +932,8 @@ function editProfile(idx) {
 
 function deleteProfile(idx) {
     showConfirm(
-        "Delete Profile?", 
-        `Are you sure you want to delete ${profiles[idx].name}'s profile? All semester data will be lost forever.`, 
+        "Delete Profile?",
+        `Are you sure you want to delete ${profiles[idx].name}'s profile? All semester data will be lost forever.`,
         "Delete",
         () => {
             profiles.splice(idx, 1);
@@ -686,14 +1030,18 @@ function renderCGPA() {
                 <div class="text-blue-600 dark:text-blue-400 text-xl font-bold">${cgpa}</div>
             </div>
         </div>
-
-        <!-- Rest of your code continues... -->
-        <button onclick="createSemester()" class="btn mt-3 flex items-center justify-center gap-2 w-full text-white dark:text-gray-900">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Create Semester
-        </button>
+        <div class="mt-4">
+            <h3 class="text-md font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M31,26c-0.6,0-1-0.4-1-1V12c0-0.6,0.4-1,1-1s1,0.4,1,1v13C32,25.6,31.6,26,31,26z"/>
+                    <g>
+                        <path d="M16,21c-0.2,0-0.3,0-0.5-0.1l-15-8C0.2,12.7,0,12.4,0,12s0.2-0.7,0.5-0.9l15-8c0.3-0.2,0.6-0.2,0.9,0l15,8 c0.3,0.2,0.5,0.5,0.5,0.9s-0.2,0.7-0.5,0.9l-15,8C16.3,21,16.2,21,16,21z"/>
+                    </g>
+                    <path d="M17.4,22.6C17,22.9,16.5,23,16,23s-1-0.1-1.4-0.4L6,18.1V22c0,3.1,4.9,6,10,6s10-2.9,10-6v-3.9L17.4,22.6z"/>
+                </svg>
+                Semester (${semesters.length})
+            </h3>
+        </div>
 
         ${semesters.map((s, i) => `
             <div onclick="openSemester(${i})" class="card flex justify-between items-center mt-2 cursor-pointer">
@@ -704,9 +1052,21 @@ function renderCGPA() {
                     </svg>
                     <span class="text-gray-700 dark:text-gray-200">Semester ${i + 1}</span>
                 </div>
-                <button onclick="event.stopPropagation(); deleteSemester(${i})" class="text-red-500 dark:text-red-400 text-sm">Delete</button>
+                <button onclick="event.stopPropagation(); deleteSemester(${i})" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition" title="Delete Semester">
+                    <svg width="18" height="18" viewBox="0 0 1024 1024" fill="currentColor" style="color: inherit !important;">
+                        <path d="M864 256H736v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zm-504-72h304v72H360v-72zm371.3 656H292.7l-24.2-512h487l-24.2 512z"/>
+                    </svg>
+                </button>
             </div>
         `).join("")}
+
+        <!-- Rest of your code continues... -->
+        <button onclick="createSemester()" class="btn mt-3 flex items-center justify-center gap-2 w-full text-white dark:text-gray-900">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Create Semester
+        </button>
 
         ${semesters.length > 0 ? `
         <div class="card mt-4">
@@ -738,7 +1098,7 @@ function renderCGPA() {
             </p>
         </div>
 
-        <!-- Calculation Formula Section -->
+        <!-- Manual Calculation Guide Section -->
         <div class="card mt-4">
             <h3 class="font-bold mb-3 flex items-center gap-2 text-base text-gray-800 dark:text-gray-200">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -746,7 +1106,7 @@ function renderCGPA() {
                     <path d="M18 4L20 6L18 8"/>
                     <path d="M6 4L4 6L6 8"/>
                 </svg>
-                Calculation Formula
+                Manual Calculation Guide
             </h3>
             
             <!-- Semester CGPA -->
@@ -978,8 +1338,8 @@ function openSemester(index) {
 
 function deleteSemester(i) {
     showConfirm(
-        "Delete Semester?", 
-        "Are you sure you want to delete this semester? This action cannot be undone.", 
+        "Delete Semester?",
+        "Are you sure you want to delete this semester? This action cannot be undone.",
         "Delete",
         () => {
             semesters.splice(i, 1);
@@ -989,12 +1349,13 @@ function deleteSemester(i) {
     );
 }
 
-// ================= PROFILE MANAGEMENT =================
+// ================= SEMESTER & SUBJECT MANAGEMENT =================
+// (also includes profile switching used by the CGPA screen)
 function changeProfile(index) {
     currentProfileIndex = parseInt(index);
     semesters = profiles[currentProfileIndex].semesters;
     save();
-    
+
     // Re-render CGPA screen and refresh chart
     render();
     if (semesters.length > 0) {
@@ -1006,21 +1367,21 @@ function changeProfile(index) {
 
 function addProfile() {
     let name = prompt("Enter student's name (e.g., Friend's Name):");
-    
+
     if (name && name.trim() !== "") {
         // Create new profile object
-        let newProfile = { 
-            id: Date.now().toString(), 
-            name: name.trim(), 
-            semesters: [] 
+        let newProfile = {
+            id: Date.now().toString(),
+            name: name.trim(),
+            semesters: []
         };
-        
+
         profiles.push(newProfile);
-        
+
         // Switch to the newly created profile
         currentProfileIndex = profiles.length - 1;
         semesters = profiles[currentProfileIndex].semesters;
-        
+
         save();
         render();
     }
@@ -1052,6 +1413,11 @@ function renderCGPAChart() {
     if (!ctx) return;
 
     if (chartInstance) chartInstance.destroy();
+
+    // Determine colors based on the current theme
+    const chartTextColor = isDarkMode ? '#9ca3af' : '#6b7280'; // Light gray for dark mode, dark gray for light
+    const chartGridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'; // Subtle white or black lines
+
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1060,17 +1426,36 @@ function renderCGPAChart() {
                 label: 'GPA',
                 data: data,
                 tension: 0.4,
-                borderColor: '#3b82f6'
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)', // Optional: adds a nice subtle blue fill under the line
+                fill: true
             }]
         },
         options: {
+            responsive: true,
             plugins: {
                 legend: { display: false }
             },
             scales: {
+                x: {
+                    grid: {
+                        color: chartGridColor,
+                        borderColor: chartGridColor // Colors the main axis line
+                    },
+                    ticks: {
+                        color: chartTextColor
+                    }
+                },
                 y: {
                     min: 0,
-                    max: 10
+                    max: 10,
+                    grid: {
+                        color: chartGridColor,
+                        borderColor: chartGridColor // Colors the main axis line
+                    },
+                    ticks: {
+                        color: chartTextColor
+                    }
                 }
             }
         }
@@ -1155,8 +1540,8 @@ function renderSemester() {
                 <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-100 dark:border-gray-800">
                     <span class="text-sm font-bold text-gray-800 dark:text-gray-200">Subject ${i + 1}</span>
                     <button onclick="deleteSubject(${i})" class="text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 p-1.5 rounded transition" title="Delete Subject">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M18 6L6 18M6 6l12 12"/>
+                        <svg width="14" height="14" viewBox="0 0 1024 1024" fill="currentColor" style="color: inherit !important;">
+                            <path d="M864 256H736v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zm-504-72h304v72H360v-72zm371.3 656H292.7l-24.2-512h487l-24.2 512z"/>
                         </svg>
                     </button>
                 </div>
@@ -1204,17 +1589,6 @@ function renderSemester() {
             Add New Subject
         </button>
     `;
-}
-
-// Helper function to escape HTML and prevent XSS
-function escapeHtml(str) {
-    if (!str) return '';
-    return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
 }
 
 // Helper function to show grade impact
@@ -1290,11 +1664,11 @@ function smartRender() {
             // Attach a one-time listener to safely render AS SOON AS they click away
             activeEl.addEventListener('blur', function onBlur() {
                 activeEl.removeEventListener('blur', onBlur);
-                setTimeout(render, 100); 
+                setTimeout(render, 100);
             }, { once: true });
-            return; 
+            return;
         }
-        
+
         render();
     }, 200);
 }
@@ -1320,11 +1694,6 @@ function deleteSubject(i) {
     semesters[currentSemester].subjects.splice(i, 1);
     save();
     render();
-}
-
-// ================= CALCULATION =================
-function getGP(g) {
-    return { "S": 10, "A": 9, "B": 8, "C": 7, "D": 6, "E": 5, "RA": 0 }[g];
 }
 
 // ================= TARGET CGPA CALCULATOR =================
@@ -1404,7 +1773,7 @@ function calculateTarget() {
     }
 
     const remainingSems = totalSems - compSems;
-    
+
     // Core Formula: Assuming equal weightage per semester for predictive purposes
     const requiredGpa = ((targetCgpa * totalSems) - (currentCgpa * compSems)) / remainingSems;
 
@@ -1448,15 +1817,15 @@ function calculateTarget() {
 }
 
 
-// ================= QUICK CALCULATOR =================
+// ================= CALCULATOR (QUICK + SCIENTIFIC) =================
 let isScientificMode = false;
 
 function toggleScientificMode() {
     isScientificMode = !isScientificMode;
     // Refresh the screen to show/hide the advanced buttons
     let app = document.getElementById("app");
-    if(app && currentScreen === "calculator") {
-         app.innerHTML = renderCalculator();
+    if (app && currentScreen === "calculator") {
+        app.innerHTML = renderCalculator();
     }
 }
 
@@ -1464,23 +1833,40 @@ function handleCalcInput(val) {
     const display = document.getElementById("calc-display");
     if (!display) return;
 
+    // Get the current cursor position (default to end of string if not focused)
+    let cursorPos = window.calcCursorPos !== undefined && window.calcCursorPos !== null
+        ? window.calcCursorPos
+        : calcExpression.length;
+
     if (val === "AC") {
         calcExpression = "";
-        display.innerText = "0";
+        display.value = "0";
+        window.calcCursorPos = 0;
         return;
     }
 
     if (val === "DEL") {
         if (calcResultShown) {
             calcExpression = "";
-            display.innerText = "0";
+            display.value = "0";
             calcResultShown = false;
+            window.calcCursorPos = 0;
         } else {
-            calcExpression = calcExpression.slice(0, -1);
-            display.innerText = calcExpression || "0";
+            // Delete one character behind the cursor
+            if (cursorPos > 0) {
+                calcExpression = calcExpression.slice(0, cursorPos - 1) + calcExpression.slice(cursorPos);
+                cursorPos--;
+            }
+            display.value = calcExpression || "0";
+            window.calcCursorPos = cursorPos;
+
+            // Keep focus and restore cursor position
+            display.focus();
+            setTimeout(() => display.setSelectionRange(cursorPos, cursorPos), 0);
         }
         return;
     }
+
     if (val === "=") {
         try {
             // Advanced Safe Math Parser
@@ -1506,69 +1892,72 @@ function handleCalcInput(val) {
 
             // Safely evaluate the expression
             let result = new Function('return ' + safeMath)();
-            
-            // Format to avoid super long decimals (allow more precision for scientific)
+
+            // Format to avoid super long decimals
             if (!Number.isInteger(result)) {
-                result = parseFloat(result.toFixed(8)); 
+                result = parseFloat(result.toFixed(8));
             }
-            
+
             // Save to history
             if (calcExpression !== result.toString()) {
                 calcHistory.unshift({ expression: calcExpression, result: result });
                 if (calcHistory.length > 20) calcHistory.pop();
                 localStorage.setItem("calcHistory", JSON.stringify(calcHistory));
-                renderCalcHistory(); // Update the history UI
+                renderCalcHistory();
             }
 
-            display.innerText = result;
+            display.value = result;
             calcExpression = result.toString();
             calcResultShown = true;
+            window.calcCursorPos = calcExpression.length;
         } catch (e) {
-            display.innerText = "Error";
+            display.value = "Error";
             calcExpression = "";
         }
         return;
     }
 
-    // Reset if a new number is typed right after a result
+    // Normal Input Handling
     if (calcResultShown && !isNaN(val)) {
-        calcExpression = "";
+        // If a new number is typed right after a result, start fresh
+        calcExpression = val;
         calcResultShown = false;
-    } else if (calcResultShown) {
-        calcResultShown = false;
+        cursorPos = val.length;
+    } else {
+        if (calcResultShown) calcResultShown = false;
+
+        // Insert character exactly where the cursor is
+        calcExpression = calcExpression.slice(0, cursorPos) + val + calcExpression.slice(cursorPos);
+        cursorPos += val.length;
     }
 
-    // Prevent multiple decimals or operators in a row
-    const lastChar = calcExpression.slice(-1);
-    const operators = ['+', '-', '×', '÷', '.'];
-    if (operators.includes(val) && operators.includes(lastChar)) {
-        calcExpression = calcExpression.slice(0, -1) + val;
-    } else {
-        calcExpression += val;
-    }
-    
-    display.innerText = calcExpression;
+    display.value = calcExpression;
+    window.calcCursorPos = cursorPos;
+
+    // Force focus back to the input so the blinking cursor remains visible
+    display.focus();
+    setTimeout(() => display.setSelectionRange(cursorPos, cursorPos), 0);
 }
 
 function renderCalcHistory() {
     const container = document.getElementById("calc-history-container");
     if (!container) return;
-    
+
     if (calcHistory.length === 0) {
         container.innerHTML = `<div class="text-center text-sm text-gray-400 dark:text-gray-500 py-4">No history yet</div>`;
         return;
     }
-    
+
     // Updated layout with individual delete buttons
     container.innerHTML = calcHistory.map((item, index) => `
         <div class="flex items-center justify-between bg-black/5 dark:bg-white/5 p-2 rounded-xl transition">            
-            <div class="text-right cursor-pointer flex-1 pl-2 active:scale-95 transition" onclick="useHistoryValue('${item.result}')">
+            <div class="text-left cursor-pointer flex-1 pl-2 active:scale-95 transition" onclick="useHistoryValue('${item.result}')">
                 <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">${item.expression.replace(/\*/g, '×').replace(/\//g, '÷')} =</div>
                 <div class="font-bold text-gray-800 dark:text-gray-200">${item.result}</div>
             </div>
             <button onclick="event.stopPropagation(); deleteHistoryItem(${index})" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-500/10 rounded-full transition" title="Delete this calculation">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 6L6 18M6 6l12 12"/>
+                <svg width="16" height="16" viewBox="0 0 1024 1024" fill="currentColor" style="color: inherit !important;">
+                    <path d="M864 256H736v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zm-504-72h304v72H360v-72zm371.3 656H292.7l-24.2-512h487l-24.2 512z"/>
                 </svg>
             </button>
         </div>
@@ -1577,8 +1966,8 @@ function renderCalcHistory() {
 
 function clearCalcHistory() {
     showConfirm(
-        "Clear History?", 
-        "Are you sure you want to clear all of your calculation history?", 
+        "Clear History?",
+        "Are you sure you want to clear all of your calculation history?",
         "Clear All",
         () => {
             calcHistory = [];
@@ -1658,7 +2047,12 @@ function renderCalculator() {
         <div class="card p-4 mb-4">
             <!-- Display Area -->
             <div class="calc-display-container">
-                <div id="calc-display" class="calc-display-text scrollbar-hide">0</div>
+                <input type="text" id="calc-display" inputmode="none" 
+                    class="calc-display-text scrollbar-hide w-full bg-transparent border-none outline-none" 
+                    value="0"
+                    onclick="window.calcCursorPos = this.selectionStart;" 
+                    onkeyup="window.calcCursorPos = this.selectionStart;"
+                    oninput="window.calcCursorPos = this.selectionStart; calcExpression = this.value;">
             </div>
 
             <!-- Buttons Grid -->
@@ -1710,9 +2104,12 @@ function renderScientificCalc() {
     return `
         <div class="sci-fullscreen-container">
             <!-- 1. The Display Area (Now visible) -->
-            <div class="sci-display-area" id="calc-display">
-                ${calcExpression || "0"}
-            </div>
+            <input type="text" id="calc-display" inputmode="none"
+                class="sci-display-area w-full bg-transparent border-none outline-none text-right" 
+                value="${calcExpression || "0"}"
+                onclick="window.calcCursorPos = this.selectionStart;" 
+                onkeyup="window.calcCursorPos = this.selectionStart;"
+                oninput="window.calcCursorPos = this.selectionStart; calcExpression = this.value;">
 
             <!-- 2. The 10x5 Grid -->
             <div class="sci-ios-grid">
@@ -1786,6 +2183,10 @@ function saveNotes() {
 }
 
 function renderNotesList() {
+    // 1. Sort notes by latest 'updatedAt' time
+    notes.sort((a, b) => b.updatedAt - a.updatedAt);
+    saveNotes();
+
     let html = `
         <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-2">
@@ -1794,8 +2195,15 @@ function renderNotesList() {
                 </svg>
                 <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-100">My Notes</h1>
             </div>
-            <div class="text-xs px-3 py-1 rounded-full bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 font-medium">
-                ${notes.length} Saved
+            
+            <!-- View Mode Toggles -->
+            <div class="flex gap-1.5 p-1 bg-gray-100 dark:bg-gray-800/50 rounded-lg">
+                <button onclick="setNotesViewMode('card')" class="p-1.5 rounded-md transition ${notesViewMode === 'card' ? 'bg-white dark:bg-gray-700 shadow-sm text-amber-500' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}" title="Card View">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                </button>
+                <button onclick="setNotesViewMode('list')" class="p-1.5 rounded-md transition ${notesViewMode === 'list' ? 'bg-white dark:bg-gray-700 shadow-sm text-amber-500' : 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300'}" title="List View">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                </button>
             </div>
         </div>
 
@@ -1805,13 +2213,16 @@ function renderNotesList() {
             </svg>
             Create New Note
         </button>
-
-        <div class="grid grid-cols-2 gap-3">
     `;
+
+    // 2. Render container based on the selected mode
+    html += notesViewMode === 'card'
+        ? `<div class="grid grid-cols-2 gap-3">`
+        : `<div class="flex flex-col gap-3">`;
 
     if (notes.length === 0) {
         html += `
-            <div class="col-span-2 card text-center py-10 text-gray-500 dark:text-gray-400 border-dashed border-2">
+            <div class="${notesViewMode === 'card' ? 'col-span-2' : 'w-full'} card text-center py-10 text-gray-500 dark:text-gray-400 border-dashed border-2">
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="mx-auto mb-3 opacity-50">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
@@ -1822,25 +2233,52 @@ function renderNotesList() {
         `;
     } else {
         notes.forEach((note, idx) => {
-            // Format date nicely
-            let dateObj = new Date(note.updatedAt);
-            let dateStr = dateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-            
-            html += `
-                <div onclick="openNote(${idx})" class="card flex flex-col cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition h-40 overflow-hidden relative group p-4 border border-amber-500/10 dark:border-amber-500/20">
-                    <h3 class="font-bold text-gray-800 dark:text-gray-100 text-sm mb-1 truncate">${escapeHtml(note.title) || "Untitled Note"}</h3>
-                    <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-4 flex-1 whitespace-pre-wrap">${escapeHtml(note.body) || "..."}</p>
-                    
-                    <div class="flex justify-between items-center mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-                        <span class="text-[10px] text-gray-400 font-medium">${dateStr}</span>
-                        <button onclick="event.stopPropagation(); deleteNote(${idx})" class="text-red-400 hover:text-red-600 transition" title="Delete Note">
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                            </svg>
-                        </button>
+            let createOpts = { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            let createdDate = new Date(note.createdAt).toLocaleString(undefined, createOpts);
+            let updatedDate = new Date(note.updatedAt).toLocaleString(undefined, createOpts);
+
+            if (notesViewMode === 'card') {
+                // CARD VIEW (Grid layout)
+                html += `
+                    <div onclick="openNote(${idx})" class="card flex flex-col cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition h-44 overflow-hidden relative group p-4 border border-amber-500/10 dark:border-amber-500/20">
+                        <h3 class="font-bold text-gray-800 dark:text-gray-100 text-sm mb-1 truncate">${escapeHtml(note.title) || "Untitled Note"}</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-3 flex-1 whitespace-pre-wrap">${escapeHtml(note.body) || "..."}</p>
+                        
+                        <div class="flex justify-between items-end mt-2 pt-2 border-t border-gray-100 dark:border-gray-800">
+                            <div class="flex flex-col gap-0.5">
+                                <span class="text-[9px] text-gray-400 font-medium tracking-tight">Created: ${createdDate}</span>
+                                <span class="text-[9px] text-amber-500/80 dark:text-amber-400/80 font-medium tracking-tight">Updated: ${updatedDate}</span>
+                            </div>
+                            
+                            <button onclick="event.stopPropagation(); deleteNote(${idx})" class="text-red-400 hover:text-red-600 transition pb-0.5" title="Delete Note">
+                                <svg width="20" height="20" viewBox="0 0 1024 1024" fill="currentColor" style="color: inherit !important;">
+                                    <path d="M864 256H736v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zm-504-72h304v72H360v-72zm371.3 656H292.7l-24.2-512h487l-24.2 512z"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else {
+                // LIST VIEW (Vertical layout)
+                html += `
+                    <div onclick="openNote(${idx})" class="card flex flex-col cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition p-4 border border-amber-500/10 dark:border-amber-500/20">
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="font-bold text-gray-800 dark:text-gray-100 text-sm truncate flex-1 pr-2">${escapeHtml(note.title) || "Untitled Note"}</h3>
+                            <button onclick="event.stopPropagation(); deleteNote(${idx})" class="text-red-400 hover:text-red-600 transition p-1" title="Delete Note">
+                                <svg width="20" height="20" viewBox="0 0 1024 1024" fill="currentColor" style="color: inherit !important;">
+                                    <path d="M864 256H736v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zm-504-72h304v72H360v-72zm371.3 656H292.7l-24.2-512h487l-24.2 512z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mb-3 whitespace-pre-wrap">${escapeHtml(note.body) || "..."}</p>
+                        
+                        <div class="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-gray-800">
+                            <span class="text-[10px] text-gray-400 font-medium tracking-tight">Created: ${createdDate}</span>
+                            <span class="text-[10px] text-amber-500/80 dark:text-amber-400/80 font-medium tracking-tight">Updated: ${updatedDate}</span>
+                        </div>
+                    </div>
+                `;
+            }
         });
     }
 
@@ -1912,13 +2350,13 @@ function autoSaveNote() {
     autoSaveTimeout = setTimeout(() => {
         let titleEl = document.getElementById('note-title');
         let bodyEl = document.getElementById('note-body');
-        
+
         if (titleEl && bodyEl && notes[currentNoteIndex]) {
             notes[currentNoteIndex].title = titleEl.value;
             notes[currentNoteIndex].body = bodyEl.value;
             notes[currentNoteIndex].updatedAt = Date.now();
             saveNotes();
-            
+
             if (statusEl) statusEl.innerText = "Saved just now";
         }
     }, 500); // Auto-save 500ms after user stops typing
@@ -1926,8 +2364,8 @@ function autoSaveNote() {
 
 function deleteNote(index) {
     showConfirm(
-        "Delete Note?", 
-        "Are you sure you want to permanently delete this note?", 
+        "Delete Note?",
+        "Are you sure you want to permanently delete this note?",
         "Delete Note",
         () => {
             notes.splice(index, 1);
@@ -1937,7 +2375,186 @@ function deleteNote(index) {
     );
 }
 
+// ================= POMODORO FOCUS TIMER =================
+function renderPomodoro() {
+    // Trigger immediate UI sync after render
+    setTimeout(updatePomodoroUI, 50);
+
+    let ringColor = pomoMode === 'study' ? 'text-blue-600 dark:text-blue-400' : 'text-amber-500 dark:text-amber-400';
+    let bgColor = pomoMode === 'study' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' : 'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400';
+
+    return `
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="${ringColor}">
+                    <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-100">Focus Timer</h1>
+            </div>
+            <div class="text-xs px-3 py-1 rounded-full font-medium ${bgColor}" id="pomo-mode-badge">
+                ${pomoMode === 'study' ? 'Study Session' : 'Break Time'}
+            </div>
+        </div>
+
+        <div class="card flex flex-col items-center py-10 relative">
+            <div class="flex gap-2 mb-8 p-1 bg-black/5 dark:bg-white/5 rounded-xl">
+                <button onclick="setPomoMode('study')" class="px-6 py-2 rounded-lg text-sm font-bold transition-all ${pomoMode === 'study' ? 'bg-white dark:bg-gray-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-gray-500'}">Study</button>
+                <button onclick="setPomoMode('break')" class="px-6 py-2 rounded-lg text-sm font-bold transition-all ${pomoMode === 'break' ? 'bg-white dark:bg-gray-700 shadow-sm text-amber-500 dark:text-amber-400' : 'text-gray-500'}">Break</button>
+            </div>
+
+            <div class="relative flex justify-center items-center mb-8">
+                <svg class="transform -rotate-90 w-64 h-64">
+                    <circle cx="128" cy="128" r="110" stroke="currentColor" stroke-width="12" fill="transparent" class="text-gray-100 dark:text-gray-800/50" />
+                    <circle id="pomo-ring" cx="128" cy="128" r="110" stroke="currentColor" stroke-width="12" fill="transparent" 
+                        stroke-dasharray="691.15" stroke-dashoffset="0" stroke-linecap="round" 
+                        class="${ringColor} transition-all duration-1000 ease-linear" />
+                </svg>
+                <div class="absolute flex flex-col items-center justify-center transform hover:scale-105 transition cursor-pointer" onclick="editPomodoroTime()" title="Click to edit timer">
+                    <div class="text-5xl font-bold text-gray-800 dark:text-white" style="font-family: var(--mono);" id="pomo-time-text">
+                        --:--
+                    </div>
+                    <div class="flex items-center gap-1 mt-1 text-[10px] uppercase tracking-widest text-gray-400 dark:text-gray-500 font-bold bg-black/5 dark:bg-white/5 px-3 py-1 rounded-full">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Tap to Edit
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-4 w-full px-6">
+                <button id="pomo-toggle-btn" onclick="togglePomodoro()" class="flex-1 py-4 rounded-2xl font-bold text-white transition active:scale-95 ${pomoMode === 'study' ? 'bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30' : 'bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-500/30'}">
+                    ${isPomoRunning ? 'Pause' : 'Start'}
+                </button>
+                <button onclick="resetPomodoro()" class="p-4 rounded-2xl font-bold bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition active:scale-95">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function setPomoMode(mode) {
+    if (isPomoRunning) togglePomodoro(); // Pause if switching modes
+    pomoMode = mode;
+    pomoTimeLeft = (mode === 'study' ? customStudyTime : customBreakTime) * 60;
+    render(); // Re-render to update theme colors
+}
+
+function togglePomodoro() {
+    if (isPomoRunning) {
+        clearInterval(pomoInterval);
+        isPomoRunning = false;
+        document.getElementById('pomo-toggle-btn').innerText = "Resume";
+    } else {
+        isPomoRunning = true;
+        document.getElementById('pomo-toggle-btn').innerText = "Pause";
+        pomoInterval = setInterval(() => {
+            pomoTimeLeft--;
+            if (pomoTimeLeft <= 0) {
+                clearInterval(pomoInterval);
+                isPomoRunning = false;
+                playPomodoroAlert();
+
+                // Auto-switch mode using custom times
+                pomoMode = pomoMode === 'study' ? 'break' : 'study';
+                pomoTimeLeft = (pomoMode === 'study' ? customStudyTime : customBreakTime) * 60;
+
+                if (currentScreen === 'pomodoro') render(); // Refresh colors
+            }
+            updatePomodoroUI();
+        }, 1000);
+    }
+}
+
+function resetPomodoro() {
+    clearInterval(pomoInterval);
+    isPomoRunning = false;
+    pomoTimeLeft = (pomoMode === 'study' ? customStudyTime : customBreakTime) * 60;
+    document.getElementById('pomo-toggle-btn').innerText = "Start";
+    updatePomodoroUI();
+}
+
+function updatePomodoroUI() {
+    let textEl = document.getElementById('pomo-time-text');
+    let ringEl = document.getElementById('pomo-ring');
+    if (!textEl || !ringEl) return;
+
+    let totalTime = (pomoMode === 'study' ? customStudyTime : customBreakTime) * 60;
+    let mins = Math.floor(pomoTimeLeft / 60).toString().padStart(2, '0');
+    let secs = (pomoTimeLeft % 60).toString().padStart(2, '0');
+
+    textEl.innerText = `${mins}:${secs}`;
+
+    let offset = 691.15 - (pomoTimeLeft / totalTime) * 691.15;
+    ringEl.style.strokeDashoffset = offset;
+}
+
+function editPomodoroTime() {
+    // Pause the timer if it's currently running
+    if (isPomoRunning) togglePomodoro();
+
+    let currentVal = pomoMode === 'study' ? customStudyTime : customBreakTime;
+    let modeName = pomoMode === 'study' ? "Study" : "Break";
+
+    showInputModal(
+        `Edit ${modeName} Time`,
+        `Enter minutes (e.g. 38)`,
+        currentVal.toString(),
+        "Save Duration",
+        (val) => {
+            let num = parseInt(val);
+            if (!isNaN(num) && num > 0) {
+                // Update the correct variable and save it
+                if (pomoMode === 'study') {
+                    customStudyTime = num;
+                    localStorage.setItem("pomoStudyTime", num);
+                } else {
+                    customBreakTime = num;
+                    localStorage.setItem("pomoBreakTime", num);
+                }
+                // Instantly apply the new time
+                pomoTimeLeft = num * 60;
+                updatePomodoroUI();
+                showToast(`Timer updated to ${num} minutes`);
+            } else {
+                showToast("Please enter a valid number greater than 0");
+            }
+        }
+    );
+}
+
+// Gentle Double-Chime using native Web Audio API (No files needed!)
+function playPomodoroAlert() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const playNote = (freq, startTime, duration) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+            gain.gain.setValueAtTime(0, ctx.currentTime + startTime);
+            gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + startTime + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + startTime + duration);
+            osc.start(ctx.currentTime + startTime);
+            osc.stop(ctx.currentTime + startTime + duration);
+        };
+        playNote(880, 0, 1);       // A5 note
+        playNote(1046.5, 0.3, 1.5); // C6 note slightly delayed
+    } catch (e) { console.log("Audio API not supported on this browser."); }
+}
+
 // ================= CO-PO =================
+let copoTab = 'input'; // Automatically start on the 'input' tab
+
+function switchCopoTab(tab) {
+    copoTab = tab;
+    render(); // Tell the app to redraw the screen with the new active tab
+}
 
 function renderCOPO() {
     return `
@@ -1949,13 +2566,11 @@ function renderCOPO() {
                 </svg>
                 <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-100">CO-PO Calculator</h1>
             </div>
-            <div class="flex gap-2">
-                <button onclick="copoMode='input'" 
-                    class="text-xs px-3 py-1 rounded-full transition ${copoMode === 'input' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}">
+            <div class="flex p-1 mx-auto mb-6 w-fit bg-gray-100/50 dark:bg-black/20 rounded-2xl backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-inner">
+                <button onclick="copoMode='input'" class="px-3 py-1 rounded-xl text-sm font-bold transition-all duration-200 ${copoMode === 'input' ? 'bg-white dark:bg-[#1e293b] text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700' : 'bg-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
                     Input
                 </button>
-                <button onclick="copoMode='output'" 
-                    class="text-xs px-3 py-1 rounded-full transition ${copoMode === 'output' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-300'}">
+                <button onclick="copoMode='output'" class="px-3 py-1 rounded-xl text-sm font-bold transition-all duration-200 ${copoMode === 'output' ? 'bg-white dark:bg-[#1e293b] text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700' : 'bg-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
                     Analyze
                 </button>
             </div>
@@ -2324,8 +2939,7 @@ function renderVisionMission() {
             <h3 class="font-bold mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-200">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                     <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <line x1="9" y1="9" x2="15" y2="15"/>
-                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <path d="M3 9h18M9 21v-6h6v6"/>
                 </svg>
                 Select Department
             </h3>
@@ -2426,8 +3040,7 @@ function renderVisionMission() {
         <div class="card mt-4 text-center py-6">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="mx-auto mb-3 text-gray-400 dark:text-gray-500">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <line x1="9" y1="9" x2="15" y2="15"/>
-                <line x1="15" y1="9" x2="9" y2="15"/>
+                <path d="M3 9h18M9 21v-6h6v6"/>
             </svg>
             <p class="text-gray-600 dark:text-gray-300">Select a department to view department vision & mission</p>
         </div>
@@ -2457,6 +3070,756 @@ window.onFacultyChange = onFacultyChange;
 window.onDepartmentChange = onDepartmentChange;
 window.resetVisionMission = resetVisionMission;
 
+// ================= TIMETABLE APP =================
+function switchTabDay(day) {
+    selectedTabDay = day;
+    render();
+}
+
+function renderTimetable() {
+    let days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+
+    // Sort selected day's classes
+    let classes = [...timetable[selectedTabDay]].sort((a, b) => timeToMins(a.start) - timeToMins(b.start));
+
+    let html = `
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-blue-600 dark:text-blue-400">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-100">Schedule</h1>
+            </div>
+            <div class="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
+                ${classes.length} Classes
+            </div>
+        </div>
+
+        <div class="flex gap-2 overflow-x-auto scrollbar-hide mb-4 pb-1">
+            ${days.map(day => `
+                <button onclick="switchTabDay('${day}')" class="px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition active:scale-95 ${selectedTabDay === day ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20' : 'bg-transparent text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-400'}">
+                    ${day}
+                </button>
+            `).join('')}
+        </div>
+
+        <div class="space-y-3 mb-6">
+    `;
+
+    if (classes.length === 0) {
+        html += `
+            <div class="card text-center py-10 text-gray-500 dark:text-gray-400 border-dashed border-2">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="mx-auto mb-3 opacity-50">
+                    <circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+                <p class="font-medium text-gray-700 dark:text-gray-300">Free Day!</p>
+                <p class="text-xs mt-1">No classes scheduled for ${selectedTabDay}.</p>
+            </div>
+        `;
+    } else {
+        classes.forEach((c, idx) => {
+            let isHappeningNow = false;
+            if (currentDayName === selectedTabDay) {
+                let now = new Date();
+                let currentMins = (now.getHours() * 60) + now.getMinutes();
+                if (currentMins >= timeToMins(c.start) && currentMins <= timeToMins(c.end)) {
+                    isHappeningNow = true;
+                }
+            }
+
+            html += `
+                <div class="card p-4 relative overflow-hidden flex items-center justify-between group ${isHappeningNow ? 'border-2 border-blue-500 shadow-lg shadow-blue-500/10' : ''}">
+                    ${isHappeningNow ? '<div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>' : ''}
+                    <div>
+                        <div class="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1 font-mono">
+                            ${formatAMPM(c.start)} - ${formatAMPM(c.end)}
+                        </div>
+                        <h3 class="text-lg font-bold text-gray-900 dark:text-white leading-tight">${escapeHtml(c.subject)}</h3>
+                        <div class="flex items-center gap-1 mt-1 text-gray-500 dark:text-gray-400 text-sm">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                            Room ${escapeHtml(c.room)}
+                        </div>
+                    </div>
+                    <div class="flex gap-1">
+                        <button onclick="showEditClassModal('${selectedTabDay}', ${idx})" class="p-2 text-blue-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-full transition" title="Edit Class">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button onclick="deleteClass('${selectedTabDay}', ${idx})" class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-full transition" title="Remove Class">
+                            <svg width="18" height="18" viewBox="0 0 1024 1024" fill="currentColor">
+                                <path d="M864 256H736v-80c0-35.3-28.7-64-64-64H352c-35.3 0-64 28.7-64 64v80H160c-17.7 0-32 14.3-32 32v32c0 4.4 3.6 8 8 8h60.4l24.7 523c1.6 34.1 29.8 61 63.9 61h454c34.2 0 62.3-26.8 63.9-61l24.7-523H888c4.4 0 8-3.6 8-8v-32c0-17.7-14.3-32-32-32zm-504-72h304v72H360v-72zm371.3 656H292.7l-24.2-512h487l-24.2 512z"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    html += `
+        </div>
+        <button onclick="showAddClassModal()" class="btn w-full flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Add Class to ${selectedTabDay}
+        </button>
+    `;
+
+    return html;
+}
+
+function showAddClassModal() {
+    let existing = document.getElementById('class-modal');
+    if (existing) existing.remove();
+
+    let modal = document.createElement('div');
+    modal.id = 'class-modal';
+    modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-200';
+
+    modal.innerHTML = `
+        <div class="card p-6 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-200">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">Add to ${selectedTabDay}</h3>
+            
+            <div class="space-y-3 mb-6 text-left">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">Subject Name</label>
+                    <input type="text" id="tt-subject" class="input w-full" placeholder="e.g. Data Structures">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">Room / Block</label>
+                    <input type="text" id="tt-room" class="input w-full" placeholder="e.g. Block A - 204">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">Start Time</label>
+                        <input type="time" id="tt-start" class="input w-full">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">End Time</label>
+                        <input type="time" id="tt-end" class="input w-full">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button id="tt-cancel" class="flex-1 py-3.5 rounded-2xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition active:scale-95">Cancel</button>
+                <button id="tt-save" class="flex-1 py-3.5 rounded-2xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition active:scale-95">Save Class</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        modal.firstElementChild.classList.remove('scale-95');
+    });
+
+    const close = () => {
+        modal.classList.add('opacity-0');
+        modal.firstElementChild.classList.add('scale-95');
+        setTimeout(() => modal.remove(), 200);
+    };
+
+    document.getElementById('tt-cancel').onclick = close;
+    document.getElementById('tt-save').onclick = () => {
+        let subj = document.getElementById('tt-subject').value.trim();
+        let room = document.getElementById('tt-room').value.trim();
+        let start = document.getElementById('tt-start').value;
+        let end = document.getElementById('tt-end').value;
+
+        if (!subj || !start || !end) {
+            showToast("Please fill Subject and Times");
+            return;
+        }
+
+        let newStartMins = timeToMins(start);
+        let newEndMins = timeToMins(end);
+
+        if (newStartMins >= newEndMins) {
+            showToast("End time must be after start time");
+            return;
+        }
+
+        // Check for time overlap
+        let hasOverlap = timetable[selectedTabDay].some(c => {
+            let existingStart = timeToMins(c.start);
+            let existingEnd = timeToMins(c.end);
+
+            // Overlap condition: (StartA < EndB) and (EndA > StartB)
+            return (newStartMins < existingEnd) && (newEndMins > existingStart);
+        });
+
+        if (hasOverlap) {
+            showToast("Time conflicts with an existing class!");
+            return;
+        }
+
+        timetable[selectedTabDay].push({ subject: subj, room: room, start: start, end: end });
+        localStorage.setItem("smarthub_timetable", JSON.stringify(timetable));
+        close();
+        render(); // Refresh timetable view
+    };
+}
+
+function showEditClassModal(day, idx) {
+    let classData = timetable[day][idx];
+
+    let existing = document.getElementById('class-modal');
+    if (existing) existing.remove();
+
+    let modal = document.createElement('div');
+    modal.id = 'class-modal';
+    modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-200';
+
+    modal.innerHTML = `
+        <div class="card p-6 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-200">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">Edit Class</h3>
+            
+            <div class="space-y-3 mb-6 text-left">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">Subject Name</label>
+                    <input type="text" id="tt-subject" class="input w-full" value="${escapeHtml(classData.subject)}">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">Room / Block</label>
+                    <input type="text" id="tt-room" class="input w-full" value="${escapeHtml(classData.room)}">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">Start Time</label>
+                        <input type="time" id="tt-start" class="input w-full" value="${classData.start}">
+                    </div>
+                    <div>
+                        <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">End Time</label>
+                        <input type="time" id="tt-end" class="input w-full" value="${classData.end}">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button id="tt-cancel" class="flex-1 py-3.5 rounded-2xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition active:scale-95">Cancel</button>
+                <button id="tt-save" class="flex-1 py-3.5 rounded-2xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition active:scale-95">Update</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        modal.firstElementChild.classList.remove('scale-95');
+    });
+
+    const close = () => {
+        modal.classList.add('opacity-0');
+        modal.firstElementChild.classList.add('scale-95');
+        setTimeout(() => modal.remove(), 200);
+    };
+
+    document.getElementById('tt-cancel').onclick = close;
+    document.getElementById('tt-save').onclick = () => {
+        let subj = document.getElementById('tt-subject').value.trim();
+        let room = document.getElementById('tt-room').value.trim();
+        let start = document.getElementById('tt-start').value;
+        let end = document.getElementById('tt-end').value;
+
+        if (!subj || !start || !end) {
+            showToast("Please fill Subject and Times");
+            return;
+        }
+
+        let newStartMins = timeToMins(start);
+        let newEndMins = timeToMins(end);
+
+        if (newStartMins >= newEndMins) {
+            showToast("End time must be after start time");
+            return;
+        }
+
+        // Check for time overlap, EXCLUDING the current class being edited (using currentIdx !== idx)
+        let hasOverlap = timetable[day].some((c, currentIdx) => {
+            if (currentIdx === idx) return false;
+
+            let existingStart = timeToMins(c.start);
+            let existingEnd = timeToMins(c.end);
+
+            return (newStartMins < existingEnd) && (newEndMins > existingStart);
+        });
+
+        if (hasOverlap) {
+            showToast("Time conflicts with an existing class!");
+            return;
+        }
+
+        // Save the updated data back to the array
+        timetable[day][idx] = { subject: subj, room: room, start: start, end: end };
+        localStorage.setItem("smarthub_timetable", JSON.stringify(timetable));
+
+        close();
+        render(); // Refresh timetable view
+    };
+}
+
+function deleteClass(day, idx) {
+    showConfirm("Remove Class?", "Are you sure you want to remove this class from your schedule?", "Remove", () => {
+        timetable[day].splice(idx, 1);
+        localStorage.setItem("smarthub_timetable", JSON.stringify(timetable));
+        render();
+    });
+}
+
+// ================= ASSIGNMENT MANAGER =================
+function renderAssignments() {
+    // Separate into pending and completed
+    let pending = assignments.filter(a => !a.completed);
+    let completed = assignments.filter(a => a.completed);
+
+    // Sort pending by closest due date
+    pending.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+
+    let html = `
+        <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-blue-600 dark:text-blue-400">
+                    <path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                </svg>
+                <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-100">Assignments</h1>
+            </div>
+            <div class="text-xs px-3 py-1 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
+                ${pending.length} Pending
+            </div>
+        </div>
+
+        <button onclick="showAddAssignmentModal()" class="btn mb-5 w-full flex items-center justify-center gap-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            New Assignment
+        </button>
+
+        <div class="space-y-3">
+    `;
+
+    if (assignments.length === 0) {
+        html += `
+            <div class="card text-center py-10 text-gray-500 dark:text-gray-400 border-dashed border-2">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="mx-auto mb-3 opacity-50">
+                    <path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+                </svg>
+                <p class="font-medium text-gray-700 dark:text-gray-300">All caught up!</p>
+                <p class="text-xs mt-1">Tap above to add a new assignment.</p>
+            </div>
+        `;
+    } else {
+        // Render Pending Tasks
+        pending.forEach((task) => {
+            let badge = getDaysLeftText(task.dueDate);
+            let prioStyle = getPriorityStyle(task.priority);
+
+            html += `
+                <div class="card p-4 flex gap-3 items-start border-l-4 border-blue-500">
+                    <button onclick="toggleAssignment('${task.id}')" class="mt-1 text-gray-400 hover:text-blue-500 transition">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle></svg>
+                    </button>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-start mb-1">
+                            <h3 class="font-bold text-gray-900 dark:text-white leading-tight pr-2">${escapeHtml(task.title)}</h3>
+                            <button onclick="deleteAssignment('${task.id}')" class="text-gray-400 hover:text-red-500 transition shrink-0">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </div>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md ${badge.color}">${badge.text}</span>
+                            <span class="text-[10px] uppercase font-bold px-2 py-0.5 rounded-md border ${prioStyle}">${task.priority}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Render Completed Tasks (Collapsible-style header)
+        if (completed.length > 0) {
+            html += `<h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mt-6 mb-2 pl-2">Completed (${completed.length})</h3>`;
+            completed.forEach((task) => {
+                html += `
+                    <div class="card p-4 flex gap-3 items-center opacity-60 bg-gray-50 dark:bg-white/5 border-dashed border-gray-200 dark:border-gray-800">
+                        <button onclick="toggleAssignment('${task.id}')" class="text-green-500 hover:text-gray-400 transition">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        </button>
+                        <h3 class="font-bold text-gray-500 dark:text-gray-400 line-through flex-1">${escapeHtml(task.title)}</h3>
+                        <button onclick="deleteAssignment('${task.id}')" class="text-gray-400 hover:text-red-500 transition">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
+                    </div>
+                `;
+            });
+        }
+    }
+
+    html += `</div>`;
+    return html;
+}
+
+// ================= POPUP MANAGER =================
+function closePopup() {
+    isPopupOpen = false; // Tell the app's brain the popup is closed!
+
+    // This scans your screen for ANY Tailwind full-screen modal background and removes it
+    const openModals = document.querySelectorAll('.fixed.inset-0:not(.hidden), .z-[9999]:not(.hidden)');
+
+    openModals.forEach(modal => {
+        modal.remove();
+    });
+}
+
+function showAddAssignmentModal() {
+    isPopupOpen = true; // Add this when the modal opens
+
+    let existing = document.getElementById('assignment-modal');
+    if (existing) existing.remove();
+
+    let modal = document.createElement('div');
+    modal.id = 'assignment-modal';
+    modal.className = 'fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm opacity-0 transition-opacity duration-200';
+
+    // Add this inside your modal opening function
+    const dateInput = document.getElementById('task-date');
+
+    if (dateInput) {
+        // 1. Get exactly right now
+        const now = new Date();
+
+        // 2. Format it precisely to YYYY-MM-DD for HTML inputs
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const todayFormatted = `${year}-${month}-${day}`;
+
+        // 3. Lock the date picker!
+        dateInput.setAttribute('min', todayFormatted);
+    }
+
+    // Default date is tomorrow
+    let tmrw = new Date();
+    tmrw.setDate(tmrw.getDate() + 1);
+    let defaultDate = tmrw.toISOString().split('T')[0];
+
+    modal.innerHTML = `
+        <div class="card p-6 w-full max-w-sm shadow-2xl transform scale-95 transition-transform duration-200">
+            <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-4 text-center">New Assignment</h3>
+            
+            <div class="space-y-3 mb-6 text-left">
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">Task Description</label>
+                    <input type="text" id="task-title" class="input w-full" placeholder="e.g. OOPs Assignment 1">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">Due Date</label>
+                    <input type="date" id="task-date" class="input w-full" value="${defaultDate}">
+                </div>
+                <div>
+                    <label class="text-xs font-bold text-gray-500 dark:text-gray-400 ml-1 mb-1 block">Priority</label>
+                    <select id="task-priority" class="input w-full">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex gap-3">
+                <button id="task-cancel" class="flex-1 py-3.5 rounded-2xl font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 dark:text-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 transition active:scale-95">Cancel</button>
+                <button id="task-save" class="flex-1 py-3.5 rounded-2xl font-bold text-white bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition active:scale-95">Save Task</button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+    requestAnimationFrame(() => {
+        modal.classList.remove('opacity-0');
+        modal.firstElementChild.classList.remove('scale-95');
+    });
+
+    const close = () => {
+        modal.classList.add('opacity-0');
+        modal.firstElementChild.classList.add('scale-95');
+        setTimeout(() => modal.remove(), 200);
+    };
+
+    // This perfectly connects the Cancel button to the smooth fade-out animation!
+    document.getElementById('task-cancel').onclick = close;
+
+    document.getElementById('task-save').onclick = () => {
+        let title = document.getElementById('task-title').value.trim();
+        let date = document.getElementById('task-date').value;
+        let priority = document.getElementById('task-priority').value;
+
+        if (!title || !date) {
+            showToast("Please enter a title and due date");
+            return;
+        }
+
+        // ================= NEW: PAST DATE BLOCKER =================
+        let selectedDateObj = new Date(date);
+        selectedDateObj.setHours(0, 0, 0, 0);
+
+        let todayObj = new Date();
+        todayObj.setHours(0, 0, 0, 0);
+
+        if (selectedDateObj < todayObj) {
+            showToast("Cannot set a deadline in the past!");
+            return; // Stops the save process completely
+        }
+        // ==========================================================
+
+        let taskId = Date.now();
+
+        let newTask = {
+            id: taskId.toString(),
+            title: title,
+            dueDate: date,
+            priority: priority,
+            completed: false
+        };
+
+        // ================= NATIVE CORDOVA NOTIFICATION =================
+        let dueDateObj = new Date(date);
+        dueDateObj.setHours(0, 0, 0, 0);
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let diffDays = Math.ceil((dueDateObj - today) / (1000 * 60 * 60 * 24));
+
+        // If the task is due tomorrow, schedule the 3-hour repeating alarm
+        if (diffDays === 1 && window.cordova && cordova.plugins.notification.local) {
+
+            cordova.plugins.notification.local.requestPermission(function (granted) {
+                if (granted) {
+                    cordova.plugins.notification.local.schedule({
+                        id: taskId,
+                        title: "Deadline Tomorrow! ⏳",
+                        text: `"${title}" is due tomorrow. Tap to open Smart Hub.`,
+                        foreground: true,
+                        vibrate: true,
+
+                        // The large colorful logo on the right
+                        icon: 'file://img/au_smart_hub.png',
+
+                        // The tiny white silhouette logo on the top left
+                        smallIcon: 'res://notify_icon',
+
+                        trigger: { in: 1, unit: 'second' },
+                        every: { hour: 3 }
+                    });
+                }
+            });
+        }
+        // ===============================================================
+
+        assignments.push(newTask);
+        localStorage.setItem("smarthub_assignments", JSON.stringify(assignments));
+        close();
+        render();
+    };
+
+    // Force lock the date picker to prevent past dates
+    setTimeout(() => {
+        const dateInput = document.getElementById('task-date');
+        if (dateInput) {
+            // Get precise local date, avoiding UTC timezone bugs
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            const todayFormatted = now.toISOString().split('T')[0];
+
+            dateInput.setAttribute('min', todayFormatted);
+
+            // Optional: Auto-fill today's date so it's never blank
+            if (!dateInput.value) {
+                dateInput.value = todayFormatted;
+            }
+        }
+    }, 50); // 50ms delay guarantees the DOM is ready
+}
+
+function toggleAssignment(id) {
+    let task = assignments.find(a => a.id === id);
+    if (task) {
+        task.completed = !task.completed;
+
+        // CORDOVA: Cancel the native alarm if completed
+        if (task.completed && window.cordova && cordova.plugins.notification.local) {
+            cordova.plugins.notification.local.cancel(parseInt(task.id), function () {
+                console.log("Notification cancelled for task: " + task.id);
+            });
+        }
+
+        localStorage.setItem("smarthub_assignments", JSON.stringify(assignments));
+        render();
+    }
+}
+
+function deleteAssignment(id) {
+    showConfirm("Delete Task?", "Are you sure you want to delete this assignment?", "Delete", () => {
+        // CORDOVA: Cancel the native alarm when deleted
+        if (window.cordova && cordova.plugins.notification.local) {
+            cordova.plugins.notification.local.cancel(parseInt(id));
+        }
+
+        assignments = assignments.filter(a => a.id !== id);
+        localStorage.setItem("smarthub_assignments", JSON.stringify(assignments));
+        render();
+    });
+}
+
+// ================= NOTIFICATION MANAGER =================
+const NOTIFY_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 Hours in milliseconds
+
+async function setupNotifications() {
+    // 1. Check if the device supports notifications
+    if (!("Notification" in window)) {
+        console.warn("This device does not support mobile notifications.");
+        return;
+    }
+
+    // 2. Ask the user for permission if not already granted/denied
+    if (Notification.permission !== "granted" && Notification.permission !== "denied") {
+        const permission = await Notification.requestPermission();
+        if (permission === "granted") {
+            console.log("Notification permission granted!");
+        }
+    }
+
+    // 3. Run the check immediately on load
+    checkAssignmentsAndNotify();
+
+    // 4. Check the deadlines every 15 minutes silently in the background
+    setInterval(checkAssignmentsAndNotify, 15 * 60 * 1000);
+}
+
+function checkAssignmentsAndNotify() {
+    // Stop if we don't have permission
+    if (Notification.permission !== "granted") return;
+
+    let assignmentsData = safeJSONParse("smarthub_assignments", []);
+    let now = Date.now();
+    let needsSave = false;
+
+    assignmentsData.forEach(task => {
+        // MAGIC 1: If the assignment is completed, do nothing!
+        if (task.completed) return;
+
+        // Calculate days left
+        let dueDate = new Date(task.dueDate);
+        dueDate.setHours(0, 0, 0, 0);
+        let today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        let diffTime = dueDate - today;
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        // MAGIC 2: Is it due tomorrow?
+        if (diffDays === 1) {
+            let lastNotified = task.lastNotified || 0;
+
+            // MAGIC 3: Has it been 3 hours since the last notification?
+            if (now - lastNotified >= NOTIFY_COOLDOWN_MS) {
+
+                triggerDeviceNotification(
+                    "Deadline Tomorrow! ⏳",
+                    `Don't forget: "${task.title}" is due tomorrow.`
+                );
+
+                // Record the exact time we sent this, so we don't spam them
+                task.lastNotified = now;
+                needsSave = true;
+            }
+        }
+    });
+
+    // Save the updated timestamps back to local storage
+    if (needsSave) {
+        localStorage.setItem("smarthub_assignments", JSON.stringify(assignmentsData));
+        // Update our global variable so it stays in sync
+        assignments = assignmentsData;
+    }
+}
+
+function triggerDeviceNotification(title, body) {
+    // Professional approach: Try to use a Service Worker if available (best for Android)
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification(title, {
+                body: body,
+                vibrate: [200, 100, 200], // Haptic vibration pattern
+                tag: 'assignment-reminder', // Groups notifications together
+                requireInteraction: true
+            });
+        });
+    } else {
+        // Fallback for standard browsers
+        new Notification(title, {
+            body: body,
+            vibrate: [200, 100, 200]
+        });
+    }
+}
+
+// ================= NOTIFICATION ONBOARDING =================
+function checkFirstTimePermissions() {
+    // Only run if Cordova is ready
+    if (window.cordova && cordova.plugins.notification.local) {
+        let hasAsked = localStorage.getItem("notif_prompt_shown");
+
+        if (!hasAsked) {
+            // Check actual native permission status first
+            cordova.plugins.notification.local.hasPermission(function (granted) {
+                if (!granted) {
+                    showPermissionExplanation();
+                } else {
+                    // Already granted, just mark as shown
+                    localStorage.setItem("notif_prompt_shown", "true");
+                }
+            });
+        }
+    }
+}
+
+function showPermissionExplanation() {
+    let overlay = document.createElement('div');
+    overlay.className = "fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 transition-opacity";
+    overlay.innerHTML = `
+        <div class="bg-white dark:bg-[#1e293b] rounded-3xl p-6 w-full max-w-sm shadow-2xl transform transition-all text-center border border-gray-100 dark:border-gray-700 animate-fade-in-up">
+            <div class="w-16 h-16 mx-auto bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+                <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+            </div>
+            <h2 class="text-xl font-extrabold text-gray-900 dark:text-white mb-2 tracking-tight">Never Miss a Deadline</h2>
+            <p class="text-gray-600 dark:text-gray-300 text-sm mb-6 leading-relaxed">
+                AU Smart Hub needs notification access to remind you when assignments are due. We will only alert you when it matters!
+            </p>
+            <button id="allowNotifBtn" class="w-full py-3.5 rounded-xl font-bold text-white bg-blue-600 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/30 active:scale-95">
+                Enable Notifications
+            </button>
+            <button id="skipNotifBtn" class="w-full mt-3 py-2 text-sm font-bold text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-all">
+                Maybe Later
+            </button>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // When they click "Enable", ask the OS for permission
+    document.getElementById('allowNotifBtn').onclick = () => {
+        cordova.plugins.notification.local.requestPermission(function (granted) {
+            localStorage.setItem("notif_prompt_shown", "true"); // Save so it never shows again
+            overlay.remove();
+        });
+    };
+
+    // When they click "Maybe Later", just hide it
+    document.getElementById('skipNotifBtn').onclick = () => {
+        localStorage.setItem("notif_prompt_shown", "true"); // Save so it never shows again
+        overlay.remove();
+    };
+}
 
 // ================= STORAGE =================
 function save() {
@@ -2481,10 +3844,10 @@ function render() {
         // Hide standard UI wrappers
         if (header) header.style.display = "none";
         if (footer) footer.style.display = "none";
-        
+
         // Remove padding so calc touches screen edges
         app.className = "m-0 p-0 max-w-full";
-        
+
         // Force Landscape Rotation
         if (window.screen && screen.orientation && screen.orientation.lock) {
             screen.orientation.lock('landscape').catch(e => console.log("Orientation lock failed", e));
@@ -2493,10 +3856,10 @@ function render() {
         // Restore standard UI wrappers
         if (header) header.style.display = "flex";
         if (footer) footer.style.display = "block";
-        
+
         // Restore standard padding for the rest of the app
         app.className = "p-5 max-w-3xl mx-auto pb-28";
-        
+
         // Unlock Rotation to return to Portrait
         if (window.screen && screen.orientation && screen.orientation.unlock) {
             screen.orientation.unlock();
@@ -2511,7 +3874,10 @@ function render() {
     if (currentScreen === "scientific-calc") app.innerHTML = renderScientificCalc();
     if (currentScreen === "notes") app.innerHTML = renderNotesList();
     if (currentScreen === "note-editor") app.innerHTML = renderNoteEditor();
-    
+    if (currentScreen === "pomodoro") app.innerHTML = renderPomodoro();
+    if (currentScreen === "timetable") app.innerHTML = renderTimetable();
+    if (currentScreen === "assignments") app.innerHTML = renderAssignments();
+
     if (currentScreen === "cgpa") {
         app.innerHTML = renderCGPA();
         if (semesters.length > 0) {
@@ -2543,8 +3909,47 @@ function handleHardwareBack(e) {
 document.addEventListener("deviceready", function () {
     applyTheme();
     document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
-    document.addEventListener("backbutton", handleHardwareBack, false);
+    // document.addEventListener("backbutton", handleHardwareBack, false);
+
+    // Ensure this variable is declared outside the listener so the app doesn't crash!
+    let lastTimeBackPress = 0;
+
+    document.addEventListener("backbutton", function (e) {
+        e.preventDefault(); // Stop default Android back behavior immediately
+
+        // ================= PRIORITY 1: VIRTUAL CANCEL TAP =================
+        // This is a list of every single "Cancel" button ID in your app
+        const cancelButtons = [
+            'task-cancel',        // Assignment Modal
+            'tt-cancel',          // Timetable Modal
+            'input-cancel-btn',   // Profile / Edit Modals
+            'confirm-cancel-btn', // Delete Confirmation Modals
+            'skipNotifBtn'        // Notification Onboarding Modal
+        ];
+
+        // If any of these buttons are currently on the screen, the app "taps" it for you!
+        for (let btnId of cancelButtons) {
+            let btn = document.getElementById(btnId);
+            if (btn) {
+                btn.click(); // Triggers your exact UI cancel logic and animations
+                return; // Stop running this function!
+            }
+        }
+
+        // ================= PRIORITY 2: USE YOUR HISTORY STACK =================
+        if (currentScreen !== "home") {
+            goBack();
+            return;
+        }
+
+        // ================= PRIORITY 3: EXIT THE APP =================
+        exitApp();
+    }, false);
+
     render();
+    setupNotifications();
+    checkFirstTimePermissions();
+    checkForUpdates();
 }, false);
 
 document.addEventListener("DOMContentLoaded", function () {
@@ -2552,16 +3957,19 @@ document.addEventListener("DOMContentLoaded", function () {
         applyTheme();
         document.getElementById("themeToggle")?.addEventListener("click", toggleTheme);
         render();
+        setupNotifications();
+        checkFirstTimePermissions();
+        checkForUpdates();
     }
 });
 
 // ================= KEYBOARD AUTO-DISMISS FIX (SAFE MODE) =================
-document.addEventListener('touchstart', function(event) {
+document.addEventListener('touchstart', function (event) {
     // If the user tapped on anything interactive, DO NOTHING. Let the phone handle it.
     if (event.target.closest('input, select, textarea, button')) {
-        return; 
+        return;
     }
-    
+
     // ONLY if they tapped the empty background, close the keyboard/dropdown
     let activeEl = document.activeElement;
     if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.tagName === 'SELECT')) {

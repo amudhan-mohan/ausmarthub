@@ -1,83 +1,565 @@
+/* ================= LOCAL FONTS ================= */
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('../fonts/JetBrainsMono-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('../fonts/JetBrainsMono-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('../fonts/JetBrainsMono-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('../fonts/JetBrainsMono-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* --- Saira Font (Body) --- */
+@font-face {
+    font-family: 'Saira';
+    src: url('../fonts/Saira-Regular.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Saira';
+    src: url('../fonts/Saira-Medium.ttf') format('truetype');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Saira';
+    src: url('../fonts/Saira-SemiBold.ttf') format('truetype');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Saira';
+    src: url('../fonts/Saira-Bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+:root {
+    --ink: #1d4ed8;
+    /* primary blueprint linework */
+    --ink-strong: #1e3a8a;
+    --amber: #d97706;
+    /* "red pen" annotation accent */
+    --amber-soft: #fef3c7;
+    --paper: #f6f7fb;
+    --paper-line: rgba(29, 78, 216, 0.09);
+    --paper-line-strong: rgba(29, 78, 216, 0.16);
+    --ink-dark: #7dd3fc;
+    /* linework on dark "night drafting" paper */
+    --ink-dark-strong: #38bdf8;
+    --amber-dark: #fbbf24;
+    --paper-dark: #0a0f1e;
+    --paper-dark-line: rgba(125, 211, 252, 0.07);
+    --paper-dark-line-strong: rgba(125, 211, 252, 0.13);
+    --radius-lg: 0.9rem;
+    --radius-md: 0.65rem;
+    --radius-sm: 0.5rem;
+    --mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 * {
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.2s var(--ease), border-color 0.2s var(--ease), color 0.15s ease, box-shadow 0.2s var(--ease);
+    -webkit-tap-highlight-color: transparent;
 }
 
 body {
-    font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    font-family: 'Saira', system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, sans-serif;
+
+    /* 1. Base light color */
+    background-color: #f4f7f9;
+
+    /* 2. Custom Unique Mesh Gradient (Removes the grid) */
+    background-image:
+        radial-gradient(at 0% 0%, rgba(219, 234, 254, 0.7) 0px, transparent 60%),
+        radial-gradient(at 100% 0%, rgba(224, 231, 255, 0.7) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(191, 219, 254, 0.5) 0px, transparent 60%),
+        radial-gradient(at 0% 100%, rgba(237, 233, 254, 0.5) 0px, transparent 60%);
+    background-attachment: fixed;
+
+    color: #1e293b;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.3s ease, background-image 0.3s ease, color 0.3s ease;
 }
 
+/* ================= ULTIMATE LIGHT MODE GRID REMOVAL ================= */
+html,
+body {
+    /* 1. Base light color */
+    background-color: #f4f7f9 !important;
+
+    /* 2. Custom Unique Mesh Gradient - FORCED */
+    background-image:
+        radial-gradient(at 0% 0%, rgba(219, 234, 254, 0.7) 0px, transparent 60%),
+        radial-gradient(at 100% 0%, rgba(224, 231, 255, 0.7) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(191, 219, 254, 0.5) 0px, transparent 60%),
+        radial-gradient(at 0% 100%, rgba(237, 233, 254, 0.5) 0px, transparent 60%) !important;
+
+    background-attachment: fixed !important;
+    background-size: cover !important;
+}
+
+/* 3. Nuke any hidden grid elements */
+body::before,
+body::after,
+#app::before,
+#app::after,
+.bg-grid,
+.bg-pattern {
+    display: none !important;
+    opacity: 0 !important;
+    background-image: none !important;
+}
+
+/* ------------------------- entrance animation ------------------------- */
+@keyframes riseIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#app>* {
+    animation: riseIn 0.35s var(--ease) both;
+}
+
+#app>*:nth-child(2) {
+    animation-delay: 0.04s;
+}
+
+#app>*:nth-child(3) {
+    animation-delay: 0.08s;
+}
+
+.grid>div {
+    animation: riseIn 0.35s var(--ease) both;
+}
+
+.grid>div:nth-child(1) {
+    animation-delay: 0.03s;
+}
+
+.grid>div:nth-child(2) {
+    animation-delay: 0.06s;
+}
+
+.grid>div:nth-child(3) {
+    animation-delay: 0.09s;
+}
+
+.grid>div:nth-child(4) {
+    animation-delay: 0.12s;
+}
+
+.grid>div:nth-child(5) {
+    animation-delay: 0.15s;
+}
+
+.grid>div:nth-child(6) {
+    animation-delay: 0.18s;
+}
+
+.grid>div:nth-child(7) {
+    animation-delay: 0.21s;
+}
+
+/* =============================== HEADER =============================== */
+header {
+    background-color: var(--paper);
+    background-image:
+        linear-gradient(var(--paper-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+    background-size: 16px 16px;
+    border-bottom: 1.5px solid var(--paper-line-strong);
+}
+
+body.dark header {
+    background-color: var(--paper-dark);
+    background-image:
+        linear-gradient(var(--paper-dark-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--paper-dark-line) 1px, transparent 1px);
+    background-size: 16px 16px;
+    border-bottom: 1.5px solid var(--paper-dark-line-strong);
+}
+
+header h1 {
+    font-family: var(--mono);
+    letter-spacing: 0.12em;
+    font-size: 1rem !important;
+    font-weight: 700 !important;
+    color: var(--ink-strong);
+    position: relative;
+    padding-bottom: 3px;
+}
+
+body.dark header h1 {
+    color: var(--ink-dark);
+    border-bottom-color: var(--amber-dark);
+}
+
+#themeToggle {
+    background: transparent;
+    border: 1.5px solid var(--paper-line-strong);
+    border-radius: var(--radius-sm);
+    transition: transform 0.15s var(--ease), border-color 0.2s ease, background-color 0.2s ease;
+}
+
+#themeToggle:hover {
+    border-color: var(--ink);
+    background: var(--paper-line);
+}
+
+#themeToggle:active {
+    transform: scale(0.9) rotate(-6deg);
+}
+
+body.dark #themeToggle {
+    border-color: var(--paper-dark-line-strong);
+}
+
+body.dark #themeToggle:hover {
+    border-color: var(--ink-dark);
+    background: var(--paper-dark-line);
+}
+
+#backBtnWrapper {
+    padding: 0.35rem;
+    border-radius: var(--radius-sm);
+    transition: background-color 0.2s var(--ease), transform 0.15s var(--ease);
+}
+
+#backBtnWrapper:hover {
+    background: var(--paper-line);
+}
+
+#backBtnWrapper:active {
+    transform: scale(0.9);
+}
+
+body.dark #backBtnWrapper:hover {
+    background: var(--paper-dark-line);
+}
+
+/* ================================ CARDS ================================
+   Flat drafting-panel cards: crisp border, hard offset shadow that
+   "lifts" on hover/press like a pinned sheet of paper, plus small
+   registration-mark ticks in the corners.                              */
 .card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(2px);
-    border-radius: 1.5rem;
+    background: #ffffff;
+    border-radius: var(--radius-lg);
     padding: 1.25rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1.5px solid var(--paper-line-strong);
+    box-shadow: 3px 3px 0 var(--paper-line-strong);
+    position: relative;
+    transition: transform 0.18s var(--ease), box-shadow 0.18s var(--ease), border-color 0.18s var(--ease);
+}
+
+.card::before,
+.card::after {
+    content: "";
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-color: var(--ink);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.card::before {
+    top: 5px;
+    left: 5px;
+    border-top: 1.5px solid;
+    border-left: 1.5px solid;
+}
+
+.card::after {
+    bottom: 5px;
+    right: 5px;
+    border-bottom: 1.5px solid;
+    border-right: 1.5px solid;
 }
 
 .card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 24px -12px rgba(0, 0, 0, 0.3);
+    transform: translate(-2px, -2px);
+    box-shadow: 5px 5px 0 var(--ink);
+    border-color: var(--ink);
 }
 
+.card:hover::before,
+.card:hover::after {
+    opacity: 0.6;
+}
+
+.card:active {
+    transform: translate(0, 0);
+    box-shadow: 1px 1px 0 var(--ink);
+}
+
+body.dark .card {
+    background: #10162a;
+    border-color: var(--paper-dark-line-strong);
+    box-shadow: 3px 3px 0 var(--paper-dark-line-strong);
+}
+
+body.dark .card::before,
+body.dark .card::after {
+    border-color: var(--ink-dark);
+}
+
+body.dark .card:hover {
+    box-shadow: 5px 5px 0 var(--ink-dark);
+    border-color: var(--ink-dark);
+}
+
+body.dark .card:active {
+    box-shadow: 1px 1px 0 var(--ink-dark);
+}
+
+body.light .card {
+    background: #ffffff;
+    border-color: var(--paper-line-strong);
+}
+
+/* Colorize the home-grid icons without touching app.js */
+.grid.grid-cols-2>div:nth-child(7n+1) svg {
+    color: var(--ink);
+}
+
+.grid.grid-cols-2>div:nth-child(7n+2) svg {
+    color: var(--amber);
+}
+
+.grid.grid-cols-2>div:nth-child(7n+3) svg {
+    color: #0891b2;
+}
+
+.grid.grid-cols-2>div:nth-child(7n+4) svg {
+    color: #be185d;
+}
+
+.grid.grid-cols-2>div:nth-child(7n+5) svg {
+    color: #15803d;
+}
+
+.grid.grid-cols-2>div:nth-child(7n+6) svg {
+    color: var(--ink-strong);
+}
+
+.grid.grid-cols-2>div:nth-child(7n+7) svg {
+    color: #b45309;
+}
+
+body.dark .grid.grid-cols-2>div svg {
+    filter: brightness(1.15);
+}
+
+/* ================================ BUTTONS ================================ */
 .btn {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    border: none;
-    padding: 0.65rem 1.25rem;
-    border-radius: 2rem;
+    background: var(--ink);
+    border: 1.5px solid var(--ink-strong);
+    padding: 0.65rem 1.3rem;
+    border-radius: var(--radius-md);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #fff;
     cursor: pointer;
-    transition: all 0.2s;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    box-shadow: 3px 3px 0 var(--ink-strong);
+    transition: transform 0.15s var(--ease), box-shadow 0.15s var(--ease), filter 0.15s ease;
 }
 
 .btn:hover {
-    transform: scale(0.98);
     filter: brightness(1.05);
 }
 
-.btn-secondary {
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: none;
+.btn:active {
+    transform: translate(3px, 3px);
+    box-shadow: 0 0 0 var(--ink-strong);
 }
 
+.btn-secondary {
+    background: transparent;
+    color: var(--ink);
+    border: 1.5px solid var(--ink);
+    box-shadow: 3px 3px 0 var(--paper-line-strong);
+}
+
+.btn-secondary:active {
+    box-shadow: 0 0 0 var(--paper-line-strong);
+}
+
+body.dark .btn {
+    background: var(--ink-dark);
+    border-color: var(--ink-dark-strong);
+    box-shadow: 3px 3px 0 var(--ink-dark-strong);
+    color: #06131f;
+}
+
+body.dark .btn:active {
+    box-shadow: 0 0 0 var(--ink-dark-strong);
+}
+
+body.dark .btn-secondary {
+    background: transparent;
+    color: var(--ink-dark);
+    border-color: var(--ink-dark);
+    box-shadow: 3px 3px 0 var(--paper-dark-line-strong);
+}
+
+body.dark .btn-secondary:active {
+    box-shadow: 0 0 0 var(--paper-dark-line-strong);
+}
+
+/* ================================ INPUTS ================================ */
 .input {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 1rem;
-    padding: 0.6rem 1rem;
+    background: #fbfcfe;
+    border: 1.5px solid var(--paper-line-strong);
+    border-radius: var(--radius-sm);
+    padding: 0.6rem 0.9rem;
     width: 100%;
     outline: none;
     font-size: 0.9rem;
+    font-family: var(--mono);
 }
 
 .input:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+    border-color: var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
 }
 
+body.dark .input {
+    background: #0d1326;
+    border-color: var(--paper-dark-line-strong);
+    color: #e5e7eb;
+}
+
+body.dark .input:focus {
+    border-color: var(--ink-dark);
+    box-shadow: 2px 2px 0 var(--ink-dark);
+}
+
+body.dark .input::placeholder {
+    color: #4b5f7a;
+}
+
+body.light .input {
+    background: #fbfcfe;
+    border-color: var(--paper-line-strong);
+    color: #0f172a;
+}
+
+body.light .input::placeholder {
+    color: #94a3b8;
+}
+
+/* ============================== STAT CARDS ==============================
+   Styled like a labelled spec-sheet data box: dashed cut-line, monospace
+   value, small uppercase tracked label.                                  */
 .stat-card {
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.2));
-    border-radius: 1.25rem;
+    background: var(--paper);
+    border-radius: var(--radius-md);
     text-align: center;
-    padding: 1rem;
+    padding: 1rem 0.5rem 0.85rem;
+    border: 1.5px dashed var(--paper-line-strong);
+    position: relative;
 }
 
+.stat-card .text-2xl,
+.stat-card .text-xl,
+.stat-card .text-3xl,
+.stat-card .font-bold {
+    font-family: var(--mono);
+}
+
+body.dark .stat-card {
+    background: #0d1326;
+    border-color: var(--paper-dark-line-strong);
+}
+
+body.light .stat-card {
+    background: #f4f6fc;
+    border-color: var(--paper-line-strong);
+}
+
+/* ================================ BADGES ================================ */
 .badge {
-    background: #1f2937;
-    border-radius: 2rem;
-    padding: 0.2rem 0.7rem;
-    font-size: 0.7rem;
-    font-weight: 500;
+    background: var(--amber-soft);
+    color: #92400e;
+    border: 1px solid #f0c778;
+    border-radius: var(--radius-sm);
+    padding: 0.2rem 0.65rem;
+    font-size: 0.68rem;
+    font-family: var(--mono);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+body.dark .badge {
+    background: rgba(251, 191, 36, 0.12);
+    color: var(--amber-dark);
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+.badge-default {
+    background-color: #eef0f7;
+    color: #475569;
+    border: 1px solid #dde1ef;
+    font-family: var(--mono);
+}
+
+body.dark .badge-default {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    border-color: rgba(255, 255, 255, 0.08);
 }
 
 .theme-transition {
-    transition: background 0.25s, color 0.2s;
+    transition: background 0.25s var(--ease), color 0.2s ease;
 }
 
+/* ============================== SCROLLBAR ============================== */
 ::-webkit-scrollbar {
-    width: 5px;
+    width: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -85,66 +567,72 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #3b82f6;
-    border-radius: 10px;
+    background: var(--ink);
+    border-radius: 2px;
+}
+
+body.dark ::-webkit-scrollbar-thumb {
+    background: var(--ink-dark);
 }
 
 .hidden {
     display: none;
 }
 
+/* ================================ TOAST ================================ */
 .toast-message {
     position: fixed;
     bottom: 90px;
     left: 50%;
     transform: translateX(-50%);
-    background: #1f2937;
-    backdrop-filter: blur(8px);
-    padding: 10px 20px;
-    border-radius: 40px;
-    font-size: 14px;
+    background: var(--ink-strong);
+    color: #fff;
+    padding: 9px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: var(--mono);
     z-index: 9999;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     font-weight: 500;
+    animation: riseIn 0.25s var(--ease) both;
 }
 
-/* ======================= DARK MODE ======================= */
+body.light .toast-message {
+    background: var(--ink-strong);
+    color: white;
+}
+
+body.dark .toast-message {
+    background: var(--ink-dark-strong);
+    color: #06131f;
+}
+
+/* ======================= DARK MODE (global surface) ======================= */
 body.dark {
-    background: linear-gradient(135deg, #0b0f1a 0%, #0a0c15 100%);
-    color: #e5e7eb;
-}
+    /* 1. Base deep midnight color */
+    background-color: #0b1121;
 
-body.dark .card {
-    background: rgba(0, 0, 0, 0.4);
-    border-color: rgba(255, 255, 255, 0.1);
-}
+    /* 2. Custom Unique Dark Mesh Gradient (Removes the grid) */
+    background-image:
+        radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.4) 0px, transparent 60%),
+        radial-gradient(at 100% 0%, rgba(17, 24, 39, 0.8) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(15, 23, 42, 0.9) 0px, transparent 60%),
+        radial-gradient(at 0% 100%, rgba(30, 64, 175, 0.3) 0px, transparent 60%);
+    background-attachment: fixed;
 
-body.dark .stat-card {
-    background: rgba(0, 0, 0, 0.4);
-}
-
-body.dark .input {
-    background: rgba(0, 0, 0, 0.5);
-    border-color: rgba(255, 255, 255, 0.2);
-    color: #f3f4f6;
-}
-
-body.dark .input::placeholder {
-    color: #9ca3af;
+    color: #f8fafc;
 }
 
 body.dark .btn-secondary {
-    background: rgba(255, 255, 255, 0.1);
-    color: #e5e7eb;
+    color: var(--ink-dark);
 }
 
-/* Dark Mode Text Colors - Explicit Overrides */
 body.dark .text-gray-300,
 body.dark .text-gray-400,
 body.dark .text-gray-500,
 body.dark .text-gray-600 {
-    color: #d1d5db !important;
+    color: #b9c4d6 !important;
 }
 
 body.dark .text-gray-700,
@@ -161,11 +649,10 @@ body.dark .text-gray-100 {
     color: #ffffff !important;
 }
 
-/* Dark Mode Colored Text */
 body.dark .text-blue-400,
 body.dark .text-blue-500,
 body.dark .text-blue-600 {
-    color: #60a5fa !important;
+    color: var(--ink-dark) !important;
 }
 
 body.dark .text-green-400,
@@ -183,7 +670,7 @@ body.dark .text-red-600 {
 body.dark .text-yellow-400,
 body.dark .text-yellow-500,
 body.dark .text-yellow-600 {
-    color: #facc15 !important;
+    color: var(--amber-dark) !important;
 }
 
 body.dark .text-purple-400,
@@ -192,16 +679,14 @@ body.dark .text-purple-600 {
     color: #c084fc !important;
 }
 
-/* Dark Mode Background Overlays */
 body.dark .bg-white\/5 {
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.06);
 }
 
 body.dark .bg-black\/5 {
     background-color: rgba(0, 0, 0, 0.3);
 }
 
-/* Dark Mode Border Colors */
 body.dark .border-white\/10 {
     border-color: rgba(255, 255, 255, 0.1);
 }
@@ -210,58 +695,142 @@ body.dark .border-white\/20 {
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-/* Dark Mode SVG Icons */
 body.dark svg {
     stroke: #e5e7eb;
 }
 
 body.dark .btn svg {
-    stroke: white;
+    stroke: #06131f;
 }
 
-/* ======================= LIGHT MODE ======================= */
+body.dark button.bg-white\/5 {
+    background-color: #1c2338 !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ================= TIMETABLE DARK MODE FIXES ================= */
+
+/* 1. Fix the Add/Edit Class Modal */
+body.dark #class-modal>div {
+    background-color: var(--paper-dark) !important;
+    border: 1px solid var(--paper-dark-line-strong) !important;
+}
+
+body.dark #class-modal h3 {
+    color: #ffffff !important;
+}
+
+body.dark #class-modal label {
+    color: #9ca3af !important;
+}
+
+body.dark #class-modal input {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #ffffff !important;
+    border: 1px solid var(--paper-dark-line) !important;
+}
+
+body.dark #class-modal input:focus {
+    border-color: var(--ink-dark) !important;
+}
+
+/* 2. Fix the Day Toggle Buttons */
+body.dark button[onclick^="switchTabDay"] {
+    color: #9ca3af !important;
+    /* Gray text for unselected */
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    background-color: transparent !important;
+}
+
+body.dark button[onclick^="switchTabDay"]:hover {
+    color: var(--ink-dark) !important;
+    /* Blue text on hover */
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Selected Day Button */
+body.dark button[onclick^="switchTabDay"][class*="bg-blue-600"] {
+    background-color: var(--ink-dark-strong) !important;
+    color: #06131f !important;
+    /* Dark text on blue background */
+    border-color: transparent !important;
+}
+
+/* ================= POMODORO DARK MODE FIXES ================= */
+
+/* 1. Unselected state (Gray text, transparent background) */
+body.dark button[onclick^="setPomoMode"] {
+    background-color: transparent !important;
+    color: #9ca3af !important;
+}
+
+body.dark button[onclick^="setPomoMode"]:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #e5e7eb !important;
+}
+
+/* 2. Active "Study" Button (Dark wrapper, Blue text) */
+body.dark button[onclick="setPomoMode('study')"][class*="bg-white"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--ink-dark) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* 3. Active "Break" Button (Dark wrapper, Amber text) */
+body.dark button[onclick="setPomoMode('break')"][class*="bg-white"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: var(--amber-dark) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* ================= ASSIGNMENT BADGE DARK MODE FIXES ================= */
+
+/* 1. Due Tomorrow & Medium Priority (Amber) */
+body.dark .bg-amber-100,
+body.dark .bg-amber-50 {
+    background-color: rgba(251, 191, 36, 0.15) !important;
+    color: var(--amber-dark) !important;
+    border-color: rgba(251, 191, 36, 0.3) !important;
+}
+
+/* 2. Due Today, Overdue & High Priority (Red) */
+body.dark .bg-red-100,
+body.dark .bg-red-50 {
+    background-color: rgba(239, 68, 68, 0.15) !important;
+    color: #f87171 !important;
+    border-color: rgba(239, 68, 68, 0.3) !important;
+}
+
+/* 3. Future Deadlines (Blue) */
+body.dark .bg-blue-100,
+body.dark .bg-blue-50 {
+    background-color: rgba(125, 211, 252, 0.15) !important;
+    color: var(--ink-dark) !important;
+    border-color: rgba(125, 211, 252, 0.3) !important;
+}
+
+/* 4. Low Priority (Green) */
+body.dark .bg-green-100,
+body.dark .bg-green-50 {
+    background-color: rgba(74, 222, 128, 0.15) !important;
+    color: #4ade80 !important;
+    border-color: rgba(74, 222, 128, 0.3) !important;
+}
+
+/* ======================= LIGHT MODE (global surface) ======================= */
 body.light {
-    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    background-color: var(--paper);
+    background-image:
+        linear-gradient(var(--paper-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+    background-size: 22px 22px;
     color: #1f2937;
-}
-
-body.light .card {
-    background: white;
-    border-color: #e2e8f0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-}
-
-body.light .stat-card {
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
-}
-
-body.light .input {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-    color: #0f172a;
-}
-
-body.light .input::placeholder {
-    color: #94a3b8;
 }
 
 body.light .btn-secondary {
-    background: #e2e8f0;
-    color: #1e293b;
+    color: var(--ink);
 }
 
-body.light .badge {
-    background: #e2e8f0;
-    color: #1f2937;
-}
-
-body.light .toast-message {
-    background: #1f2937;
-    color: white;
-}
-
-/* Light Mode Text Colors */
 body.light .text-gray-300,
 body.light .text-gray-400,
 body.light .text-gray-500,
@@ -283,11 +852,10 @@ body.light .text-gray-100 {
     color: #1f2937 !important;
 }
 
-/* Light Mode Colored Text */
 body.light .text-blue-400,
 body.light .text-blue-500,
 body.light .text-blue-600 {
-    color: #2563eb !important;
+    color: var(--ink) !important;
 }
 
 body.light .text-green-400,
@@ -305,7 +873,7 @@ body.light .text-red-600 {
 body.light .text-yellow-400,
 body.light .text-yellow-500,
 body.light .text-yellow-600 {
-    color: #ca8a04 !important;
+    color: var(--amber) !important;
 }
 
 body.light .text-purple-400,
@@ -314,115 +882,86 @@ body.light .text-purple-600 {
     color: #9333ea !important;
 }
 
-/* Light Mode Background Overlays */
 body.light .bg-white\/5 {
-    background-color: rgba(0, 0, 0, 0.05);
+    background-color: rgba(0, 0, 0, 0.04);
 }
 
 body.light .bg-black\/5 {
     background-color: rgba(0, 0, 0, 0.03);
 }
 
-/* Light Mode Border Colors */
 body.light .border-white\/10 {
     border-color: rgba(0, 0, 0, 0.1);
 }
-
-/* Light Mode SVG Icons */
-/* body.light svg {
-    stroke: #374151;
-} */
 
 body.light .btn svg {
     stroke: white;
 }
 
-
-/* Dropdown Styles */
+/* ============================== SELECT/DROPDOWN ============================== */
 select {
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%231d4ed8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1rem center;
-    background-size: 1.2rem;
+    background-size: 1.1rem;
     cursor: pointer;
+    font-family: var(--mono);
 }
 
 body.dark select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23e5e7eb'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%237dd3fc'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+    background-color: #10162a;
+    color: #e5e7eb !important;
+}
+
+body.dark select option {
+    background-color: #10162a;
+    color: #e5e7eb;
 }
 
 select:focus {
     outline: none;
+    box-shadow: 2px 2px 0 var(--ink);
 }
 
-/* Card border fixes for dark mode */
+body.dark select:focus {
+    box-shadow: 2px 2px 0 var(--ink-dark);
+}
+
 body.dark .card {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--paper-dark-line-strong);
 }
 
 body.light .card {
-    border-color: #e2e8f0;
+    border-color: var(--paper-line-strong);
 }
 
 /* Vision & Mission specific styles */
 .vision-card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
 
 .vision-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--ink);
 }
 
 body.dark .vision-card:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+    box-shadow: 4px 4px 0 var(--ink-dark);
 }
 
-/* Custom Select Dropdown */
-select {
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 1.2rem;
-    cursor: pointer;
-}
-
-body.dark select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-    background-color: #1f2937;
-    color: #e5e7eb;
-}
-
-select:focus {
-    outline: none;
-    ring: 2px solid #3b82f6;
-}
-/* ======================= BADGE FIXES ======================= */
-
-/* Fix for the Institutional Goals badge */
-.badge-default {
-    background-color: #e5e7eb;
-    color: #374151;
-}
-
-body.dark .badge-default {
-    background-color: #374151;
-    color: #e5e7eb;
-}
-
-/* Ensure all badge-like elements are visible in dark mode */
+/* ======================= BADGE / TEXT UTILITY FIXES ======================= */
 body.dark .bg-gray-100 {
-    background-color: #1f2937 !important;
+    background-color: #131a2e !important;
 }
 
 body.dark .text-gray-600 {
-    color: #d1d5db !important;
+    color: #b9c4d6 !important;
 }
 
 body.dark .bg-gray-200 {
-    background-color: #374151 !important;
+    background-color: #1c2338 !important;
 }
 
 body.dark .text-gray-700 {
@@ -430,8 +969,6 @@ body.dark .text-gray-700 {
 }
 
 /* ======================= VISION & MISSION DARK MODE FIXES ======================= */
-
-/* Ensure text in cards is visible in dark mode */
 body.dark .card .text-gray-700,
 body.dark .card .text-gray-600,
 body.dark .card .text-gray-500,
@@ -440,10 +977,9 @@ body.dark .card li {
     color: #e5e7eb !important;
 }
 
-/* Vision & Mission specific dark mode text */
 body.dark .bg-blue-50,
 body.dark .bg-green-50 {
-    background-color: rgba(59, 130, 246, 0.1) !important;
+    background-color: rgba(29, 78, 216, 0.12) !important;
 }
 
 body.dark .bg-blue-50 p,
@@ -453,23 +989,10 @@ body.dark .bg-green-50 li {
     color: #e5e7eb !important;
 }
 
-/* Ensure mission list items are visible */
 body.dark .list-disc li {
     color: #d1d5db !important;
 }
 
-/* Dropdown text visibility */
-body.dark select {
-    color: #f3f4f6 !important;
-    background-color: #1f2937 !important;
-}
-
-body.dark select option {
-    background-color: #1f2937;
-    color: #e5e7eb;
-}
-
-/* Card content visibility */
 body.dark .card .leading-relaxed {
     color: #e5e7eb !important;
 }
@@ -479,21 +1002,18 @@ body.dark .card .space-y-4 li {
     color: #e5e7eb !important;
 }
 
-/* Border visibility in dark mode */
 body.dark .border-b {
     border-bottom-color: rgba(255, 255, 255, 0.1) !important;
 }
 
-/* Heading colors in dark mode */
-body.dark h1, 
-body.dark h2, 
-body.dark h3, 
+body.dark h1,
+body.dark h2,
+body.dark h3,
 body.dark h4,
 body.dark .font-bold {
     color: #f3f4f6 !important;
 }
 
-/* Specific fix for vision and mission text */
 body.dark .bg-blue-50 .text-gray-700,
 body.dark .bg-green-50 .text-gray-700,
 body.dark .bg-blue-50 .text-gray-800,
@@ -501,24 +1021,20 @@ body.dark .bg-green-50 .text-gray-800 {
     color: #e5e7eb !important;
 }
 
-/* Make sure the mission list items are white in dark mode */
 body.dark ul.list-disc li {
     color: #d1d5db !important;
 }
 
-/* Fix for the faculty/department names */
 body.dark .card .text-gray-800 {
     color: #f3f4f6 !important;
 }
 
-/* Ensure all paragraph text is visible */
 body.dark p {
     color: #e5e7eb !important;
 }
 
-/* Fix for the colored text in dark mode */
 body.dark .text-blue-700 {
-    color: #60a5fa !important;
+    color: var(--ink-dark) !important;
 }
 
 body.dark .text-green-700 {
@@ -529,7 +1045,6 @@ body.dark .text-purple-600 {
     color: #c084fc !important;
 }
 
-/* Fix for the message card when no department selected */
 body.dark .text-center .text-gray-600 {
     color: #9ca3af !important;
 }
@@ -538,7 +1053,7 @@ body.dark .text-center .text-gray-600 {
 .calc-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.75rem;
+    gap: 0.7rem;
     user-select: none;
 }
 
@@ -548,95 +1063,110 @@ body.dark .text-center .text-gray-600 {
 
 .calc-btn {
     padding: 1.1rem 0;
-    border-radius: 1rem;
-    font-size: 1.25rem;
+    border-radius: var(--radius-sm);
+    font-size: 1.2rem;
+    font-family: var(--mono);
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
-    border: none;
+    border: 1.5px solid transparent;
     cursor: pointer;
-    transition: transform 0.1s ease, filter 0.2s ease, background-color 0.2s ease;
+    transition: transform 0.1s var(--ease), box-shadow 0.15s var(--ease);
 }
 
 .calc-btn:active {
-    transform: scale(0.92);
+    transform: translate(2px, 2px);
+    box-shadow: 0 0 0 !important;
 }
 
 .calc-display-container {
-    padding: 1.5rem 1rem;
-    border-radius: 1.25rem;
-    margin-bottom: 1.25rem;
+    padding: 1.4rem 1rem;
+    border-radius: var(--radius-md);
+    margin-bottom: 1.1rem;
     overflow-x: auto;
     white-space: nowrap;
 }
 
 .calc-display-text {
-    font-size: 2.5rem;
+    font-size: 2.4rem;
+    font-family: var(--mono);
     font-weight: 700;
     text-align: right;
-    letter-spacing: 0.05em;
 }
 
-/* --- Light Mode Colors --- */
 body.light .calc-display-container {
     background: #ffffff;
-    border: 1px solid #e2e8f0;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+    border: 1.5px solid var(--paper-line-strong);
 }
-body.light .calc-display-text { color: #1f2937; }
+
+body.light .calc-display-text {
+    color: #1f2937;
+}
 
 body.light .calc-num {
     background: #ffffff;
     color: #1f2937;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-    border: 1px solid #f1f5f9;
+    border: 1.5px solid var(--paper-line-strong);
+    box-shadow: 2px 2px 0 var(--paper-line-strong);
 }
+
 body.light .calc-op {
-    background: #eff6ff;
-    color: #2563eb;
-    box-shadow: 0 2px 6px rgba(37,99,235,0.1);
+    background: #eaf1ff;
+    color: var(--ink);
+    border-color: var(--ink);
+    box-shadow: 2px 2px 0 var(--ink);
 }
+
 body.light .calc-del {
     background: #fee2e2;
     color: #dc2626;
-    box-shadow: 0 2px 6px rgba(220,38,38,0.1);
-}
-body.light .calc-eq {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: #ffffff;
-    box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+    border-color: #dc2626;
+    box-shadow: 2px 2px 0 #dc2626;
 }
 
-/* --- Dark Mode Colors --- */
-body.dark .calc-display-container {
-    background: #111827;
-    border: 1px solid rgba(255,255,255,0.05);
-    box-shadow: inset 0 4px 10px rgba(0,0,0,0.4);
+body.light .calc-eq {
+    background: var(--ink);
+    color: #ffffff;
+    border-color: var(--ink-strong);
+    box-shadow: 2px 2px 0 var(--ink-strong);
 }
-body.dark .calc-display-text { color: #f3f4f6; }
+
+body.dark .calc-display-container {
+    background: #0d1326;
+    border: 1.5px solid var(--paper-dark-line-strong);
+}
+
+body.dark .calc-display-text {
+    color: #f3f4f6;
+}
 
 body.dark .calc-num {
-    background: #1f2937;
+    background: #10162a;
     color: #f3f4f6;
-    border: 1px solid rgba(255,255,255,0.05);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+    border: 1.5px solid var(--paper-dark-line-strong);
+    box-shadow: 2px 2px 0 var(--paper-dark-line-strong);
 }
+
 body.dark .calc-op {
-    background: rgba(59,130,246,0.15);
-    color: #60a5fa;
-    border: 1px solid rgba(59,130,246,0.1);
+    background: rgba(125, 211, 252, 0.1);
+    color: var(--ink-dark);
+    border-color: var(--ink-dark);
+    box-shadow: 2px 2px 0 var(--ink-dark);
 }
+
 body.dark .calc-del {
-    background: rgba(239,68,68,0.15);
+    background: rgba(239, 68, 68, 0.12);
     color: #f87171;
-    border: 1px solid rgba(239,68,68,0.1);
+    border-color: #f87171;
+    box-shadow: 2px 2px 0 #f87171;
 }
+
 body.dark .calc-eq {
-    background: linear-gradient(135deg, #3b82f6, #2563eb);
-    color: #ffffff;
-    box-shadow: 0 4px 15px rgba(37,99,235,0.4);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: var(--ink-dark);
+    color: #06131f;
+    border-color: var(--ink-dark-strong);
+    box-shadow: 2px 2px 0 var(--ink-dark-strong);
 }
 
 /* ================= FULLSCREEN SCIENTIFIC CALC (iOS STYLE) ================= */
@@ -648,9 +1178,11 @@ body.dark .calc-eq {
     padding: 0.5rem;
     background-color: #000000;
 }
-body.light .sci-fullscreen-container { background-color: #f3f4f6; }
 
-/* Consolidated Display Area */
+body.light .sci-fullscreen-container {
+    background-color: #eef1f8;
+}
+
 .sci-display-area {
     height: 60px;
     display: flex;
@@ -658,175 +1190,325 @@ body.light .sci-fullscreen-container { background-color: #f3f4f6; }
     justify-content: flex-end;
     padding-right: 1rem;
     font-size: 2rem;
+    font-family: var(--mono);
     margin-bottom: 0.5rem;
-    border-radius: 0.5rem;
-    background: #e5e7eb; 
+    border-radius: var(--radius-sm);
+    background: #e5e7eb;
     color: #1f2937;
 }
 
 body.dark .sci-display-area {
-    background: #111111;
-    color: #ffffff;
+    background: #0d1326;
+    color: var(--ink-dark);
 }
 
-/* Updated Grid: Added 'flex: 1' so it grows to fill the remaining screen space */
 .sci-ios-grid {
     display: grid;
     grid-template-columns: repeat(10, 1fr);
-    gap: 0.25rem;
-    flex: 1; 
+    gap: 0.3rem;
+    flex: 1;
     min-height: 0;
 }
 
-/* Buttons */
 .s-btn {
     display: flex;
     align-items: center;
     justify-content: center;
     border: none;
-    border-radius: 50px;
+    border-radius: var(--radius-sm);
+    font-family: var(--mono);
     font-size: 0.85rem;
     font-weight: 500;
     cursor: pointer;
-    /* Removed fixed min-height, let them fill the grid cells */
+    transition: filter 0.15s ease, transform 0.1s var(--ease);
 }
 
-.s-btn:active { filter: brightness(1.3); }
+.s-btn:active {
+    filter: brightness(1.25);
+    transform: scale(0.94);
+}
 
-/* --- BUTTON COLOR PALETTE --- */
-/* Scientific Functions */
-.s-sci { background-color: #212121; color: #ffffff; }
-body.light .s-sci { background-color: #e5e7eb; color: #000000; }
+.s-sci {
+    background-color: #212121;
+    color: #ffffff;
+}
 
-/* Numbers */
-.s-num { background-color: #333333; color: #ffffff; font-size: 1.2rem; }
-body.light .s-num { background-color: #ffffff; color: #000000; }
+body.light .s-sci {
+    background-color: #dbe4f3;
+    color: var(--ink-strong);
+}
 
-/* Top Row (AC, DEL, %) */
-.s-top { background-color: #a5a5a5; color: #000000; font-size: 1.1rem; }
-body.light .s-top { background-color: #d1d5db; color: #000000; }
+.s-num {
+    background-color: #333333;
+    color: #ffffff;
+    font-size: 1.2rem;
+}
 
-/* Blue Operators */
-.s-op  { background-color: #2563eb; color: #ffffff; font-size: 1.5rem; }
+body.light .s-num {
+    background-color: #ffffff;
+    color: #0f172a;
+    border: 1px solid #e2e8f0;
+}
 
-/* Wide Zero */
+.s-top {
+    background-color: #a5a5a5;
+    color: #000000;
+    font-size: 1.1rem;
+}
+
+body.light .s-top {
+    background-color: #cbd5e1;
+    color: #000000;
+}
+
+.s-op {
+    background-color: var(--ink);
+    color: #ffffff;
+    font-size: 1.5rem;
+}
+
+body.dark .s-op {
+    background-color: var(--ink-dark);
+    color: #06131f;
+}
+
 .s-zero {
     grid-column: span 2;
 }
 
-/* ================= POPUP / MODAL DARK MODE FIX ================= */
-/* 1. Modal Background & Border */
-body.dark #custom-confirm-modal > div {
-    background-color: #1c1c1e !important;
-    border-color: rgba(255, 255, 255, 0.05) !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+/* ================= POPUP / MODAL ================= */
+#custom-confirm-modal>div,
+#custom-input-modal>div {
+    border-radius: var(--radius-lg) !important;
+    border: 1.5px solid var(--paper-line-strong) !important;
 }
 
-/* 2. Modal Title Text */
+body.dark #custom-confirm-modal>div {
+    background-color: #10162a !important;
+    border-color: var(--paper-dark-line-strong) !important;
+    box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.4) !important;
+}
+
 body.dark #custom-confirm-modal h3 {
-    color: #f9fafb !important; /* Bright White */
+    color: #f9fafb !important;
 }
 
-/* 3. Modal Message Text */
 body.dark #custom-confirm-modal p {
-    color: #9ca3af !important; /* Soft Gray */
+    color: #9ca3af !important;
 }
 
-/* 4. Cancel Button styling */
 body.dark #confirm-cancel-btn {
-    background-color: #27272a !important; /* Dark Gray */
-    color: #e4e4e7 !important; /* Light Gray text */
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: #e4e4e7 !important;
+    border-radius: var(--radius-sm) !important;
 }
 
 body.dark #confirm-cancel-btn:hover {
-    background-color: #3f3f46 !important; /* Slightly lighter gray on hover */
+    background-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* 5. Warning Icon Colors (Light Mode) */
 #custom-confirm-modal .rounded-full {
-    background-color: #fee2e2 !important; /* Light red background */
-    color: #ef4444 !important; /* Bright red icon */
+    background-color: #fee2e2 !important;
+    color: #ef4444 !important;
 }
 
-/* 6. Warning Icon Colors (Dark Mode) */
 body.dark #custom-confirm-modal .rounded-full {
-    background-color: rgba(153, 27, 27, 0.3) !important; /* Subtle dark red background */
-    color: #f87171 !important; /* Soft, bright red icon for high contrast */
+    background-color: rgba(153, 27, 27, 0.3) !important;
+    color: #f87171 !important;
 }
 
-/* ================= INPUT MODAL DARK MODE ================= */
-/* Background & Borders */
-body.dark #custom-input-modal > div {
-    background-color: #1c1c1e !important;
-    border-color: rgba(255, 255, 255, 0.05) !important;
+/* ================= INPUT MODAL ================= */
+body.dark #custom-input-modal>div {
+    background-color: #10162a !important;
+    border-color: var(--paper-dark-line-strong) !important;
 }
 
-/* Modal Title */
 body.dark #custom-input-modal h3 {
-    color: #f9fafb !important; 
+    color: #f9fafb !important;
 }
 
-/* User Icon Colors */
 body.dark #custom-input-modal .rounded-full {
-    background-color: rgba(59, 130, 246, 0.2) !important; /* Dark Blue */
-    color: #60a5fa !important; /* Light Blue */
+    background-color: rgba(125, 211, 252, 0.15) !important;
+    color: var(--ink-dark) !important;
 }
 
-/* Input Field styling for dark mode */
 body.dark #modal-input-field {
-    background-color: rgba(0, 0, 0, 0.3) !important;
+    background-color: #0d1326 !important;
     color: #ffffff !important;
+    font-family: var(--mono);
 }
 
-/* Cancel Button */
 body.dark #input-cancel-btn {
-    background-color: #27272a !important;
+    background-color: rgba(255, 255, 255, 0.06) !important;
     color: #e4e4e7 !important;
+    border-radius: var(--radius-sm) !important;
 }
-body.dark #input-cancel-btn:hover { background-color: #3f3f46 !important; }
 
-/* ================= NOTE EDITOR DARK MODE FIX ================= */
-/* 1. Main Editor Card Background */
+body.dark #input-cancel-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* ================= NOTE EDITOR ================= */
 body.dark #note-editor-card {
-    background-color: #1c1c1e !important;
-    border-color: rgba(255, 255, 255, 0.05) !important;
+    background-color: #10162a !important;
+    border-color: var(--paper-dark-line-strong) !important;
 }
 
-/* 2. Note Title Text & Bottom Border */
 body.dark #note-title {
     color: #ffffff !important;
-    border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+    border-bottom-color: var(--paper-dark-line-strong) !important;
+    font-family: var(--mono);
 }
+
 body.dark #note-title::placeholder {
-    color: #4b5563 !important; /* Darker gray placeholder */
+    color: #4b5f7a !important;
 }
 
-/* 3. Note Body Text */
 body.dark #note-body {
-    color: #d1d5db !important; /* Light gray text for readability */
-}
-body.dark #note-body::placeholder {
-    color: #4b5563 !important;
+    color: #d1d5db !important;
 }
 
-/* 4. Save Status Text */
+body.dark #note-body::placeholder {
+    color: #4b5f7a !important;
+}
+
 body.dark #note-save-status {
     color: #6b7280 !important;
+    font-family: var(--mono);
 }
 
-/* 5. Done Button */
 body.dark #note-done-btn {
-    background-color: rgba(217, 119, 6, 0.2) !important; /* Subtle amber background */
-    color: #fbbf24 !important; /* Bright amber text */
+    background-color: rgba(251, 191, 36, 0.15) !important;
+    color: var(--amber-dark) !important;
+    border-radius: var(--radius-sm) !important;
 }
 
-/* ================= FOOTER DARK MODE FIX ================= */
+/* ================= FOOTER ================= */
+footer {
+    background-color: var(--paper) !important;
+    background-image:
+        linear-gradient(var(--paper-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+    background-size: 16px 16px;
+    border-top: 1.5px solid var(--paper-line-strong) !important;
+}
+
+footer p {
+    font-family: var(--mono);
+    letter-spacing: 0.03em;
+}
+
 body.dark footer {
-    /* Uses a semi-transparent black to keep the glassmorphism blur effect */
-    background-color: rgba(0, 0, 0, 0.6) !important;
-    border-top-color: rgba(255, 255, 255, 0.08) !important;
+    background-color: var(--paper-dark) !important;
+    background-image:
+        linear-gradient(var(--paper-dark-line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--paper-dark-line) 1px, transparent 1px);
+    background-size: 16px 16px;
+    border-top-color: var(--paper-dark-line-strong) !important;
 }
 
 body.dark footer p {
-    color: #9ca3af !important; /* Soft gray-400 so it is perfectly readable */
+    color: #7d8aa3 !important;
+}
+
+/* ================= COMPLETE GRID REMOVAL & GLASS UI ================= */
+
+/* 1. Destroy any lingering grid lines on pseudo-elements or inner wrappers */
+body::before,
+body::after,
+#app::before,
+#app::after,
+.bg-grid,
+[class*="bg-[url"] {
+    display: none !important;
+    background-image: none !important;
+}
+
+/* 2. Force main app containers to be transparent so the body gradient shows */
+#app,
+main,
+.app-wrapper,
+.wrapper {
+    background-color: transparent !important;
+    background-image: none !important;
+}
+
+/* 3. Light Mode: Premium Frosted Glass Header & Footer */
+header,
+footer,
+nav,
+.sticky.top-0,
+.fixed.bottom-0 {
+    background-image: none !important;
+    background-color: rgba(255, 255, 255, 0.5) !important;
+    /* Semi-transparent white */
+    backdrop-filter: blur(16px) !important;
+    /* Frosted glass effect */
+    -webkit-backdrop-filter: blur(16px) !important;
+    /* Safari support */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 4. Dark Mode: Premium Frosted Glass Header & Footer */
+body.dark header,
+body.dark footer,
+body.dark nav,
+body.dark .sticky.top-0,
+body.dark .fixed.bottom-0 {
+    background-color: rgba(11, 17, 33, 0.6) !important;
+    /* Semi-transparent midnight */
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ================= ULTIMATE DARK MODE BACKGROUND FIX ================= */
+html.dark,
+body.dark {
+    /* 1. Base deep midnight color - FORCED */
+    background-color: #0b1121 !important;
+
+    /* 2. Custom Unique Dark Mesh Gradient - FORCED */
+    background-image:
+        radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.4) 0px, transparent 60%),
+        radial-gradient(at 100% 0%, rgba(17, 24, 39, 0.8) 0px, transparent 60%),
+        radial-gradient(at 100% 100%, rgba(15, 23, 42, 0.9) 0px, transparent 60%),
+        radial-gradient(at 0% 100%, rgba(30, 64, 175, 0.3) 0px, transparent 60%) !important;
+
+    background-attachment: fixed !important;
+    background-size: cover !important;
+    color: #f8fafc !important;
+}
+
+/* Ensure the header also gets the correct dark frosted glass */
+html.dark header,
+body.dark header,
+html.dark footer,
+body.dark footer {
+    background-color: rgba(11, 17, 33, 0.6) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* ================= FIX BOTTOM LIGHT GAP ================= */
+html, body {
+    /* Force the page to always be at least the height of the device screen */
+    min-height: 100vh !important;
+    min-height: 100dvh !important; /* Modern mobile support */
+    
+    /* Ensure the background stretches over the entire height */
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+}
+
+/* Ensure the app wrapper also stretches if you are using one */
+#app, main, .wrapper {
+    min-height: 100vh !important;
+    min-height: 100dvh !important;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Push the footer to the bottom if the content is short */
+footer {
+    margin-top: auto !important; 
 }

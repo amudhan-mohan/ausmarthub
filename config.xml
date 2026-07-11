@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.aucse.smarthub" version="1.0.12"
+<widget id="com.aucse.smarthub" version="1.0.14"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:cdv="http://cordova.apache.org/ns/1.0">
 
@@ -10,7 +10,7 @@
         It provides CGPA calculation, CO-PO analysis, and future academic tools in a modern, offline-ready mobile application.
     </description>
 
-    <author email="amudhan.m2004@gmail.com" href="https://amudhanmohan.in">
+    <author email="hello@amudhanmohan.in" href="https://amudhanmohan.in">
         Amudhan Mohan
     </author>
 
@@ -23,8 +23,10 @@
     <!-- SPLASH -->
     <platform name="android">
     
-    	<!-- APP ICON -->
-	<icon src="www/img/au_smart_hub.png" />
+        <!-- APP ICON -->
+	    <icon src="www/img/au_smart_hub.png" />
+
+        <resource-file src="www/img/notify_icon.png" target="app/src/main/res/drawable/notify_icon.png" />
 	
         <!-- Splash Screen -->
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/img/au_smart_hub.png" />
