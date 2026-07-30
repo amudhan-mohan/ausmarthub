@@ -1,8 +1,8 @@
 {
   "name": "com.aucse.smarthub",
   "displayName": "AU Smart Hub",
-  "version": "1.0.14",
-  "description": "A sample Apache Cordova application that responds to the deviceready event.",
+  "version": "1.0.16",
+  "description": "AU Smart Hub is an all-in-one Android student productivity suite featuring CGPA Tracker, NPTEL Tracker, Smart Notes, Timetable, Assignment Manager, Scientific Calculator, Focus Timer, and more.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,10 +10,20 @@
     "watch": "tailwindcss -i ./www/css/input.css -o ./www/css/output.css --watch"
   },
   "keywords": [
-    "ecosystem:cordova"
+    "cordova",
+    "android",
+    "student",
+    "education",
+    "cgpa",
+    "nptel",
+    "calculator",
+    "productivity",
+    "timetable",
+    "notes",
+    "pomodoro"
   ],
-  "author": "Apache Cordova Team",
-  "license": "Apache-2.0",
+  "author": "Amudhan Mohan",
+  "license": "MIT",
   "devDependencies": {
     "cordova-android": "^15.0.0",
     "cordova-plugin-device": "^3.0.0",

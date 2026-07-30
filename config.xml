@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.aucse.smarthub" version="1.0.14"
+<widget id="com.aucse.smarthub" version="1.0.16"
     xmlns="http://www.w3.org/ns/widgets"
-    xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    xmlns:cdv="http://cordova.apache.org/ns/1.0"
+    xmlns:android="http://schemas.android.com/apk/res/android">
 
     <name>AU Smart Hub</name>
 
@@ -32,6 +33,9 @@
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/img/au_smart_hub.png" />
         <preference name="AndroidWindowSplashScreenBackground" value="#f8fafc" />
 
+        <config-file target="AndroidManifest.xml" parent="/manifest">
+            <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+        </config-file>
     </platform>
 
 </widget>

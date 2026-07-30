@@ -3,40 +3,112 @@
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
 ![Framework](https://img.shields.io/badge/Apache-Cordova-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
-![Version](https://img.shields.io/badge/Version-v1.0.14-orange)
+![Version](https://img.shields.io/badge/Version-v1.0.16-orange)
 
-AU Smart Hub is a premium, full-scale student productivity suite designed specifically for university students. Developed using Apache Cordova and styled with a sleek Tailwind CSS aesthetic, it combines powerful academic productivity tools with native-feeling mobile components, immersive safe-area navigation, and flawless Light/Dark mode execution.
+AU Smart Hub is a modern all-in-one student productivity suite built specifically for university students. Powered by Apache Cordova with a modular JavaScript architecture and styled using Tailwind CSS, the app combines academic planning, engineering calculators, note-taking, assignment management, and NPTEL tracking into one seamless Android experience.
+
+Designed with native Android behaviors, smart notifications, offline storage, responsive layouts, and Light/Dark mode support, AU Smart Hub delivers a fast, reliable, and distraction-free learning companion.
 
 ## ✨ Features
 
-### 📅 Core Productivity & Academic Tools
-* **🎓 Advanced CGPA Tracker:** Manage multiple student profiles, track semester grades, and visualize academic performance with Dynamic, theme-aware GPA trend charts.
-* **📅 Smart Timetable Module:** An interactive scheduling system that tracks classes by day, automatically highlights the class currently in progress ("Happening Now") via live background loops, and showcases what is "Up Next" directly on your dashboard.
-* **⏱️ Focus Timer (Pomodoro):** A beautiful, distraction-free timer featuring a customizable animated progress ring, distinct "Study" and "Break" toggles, and native Web Audio alert system.
-* **📝 Smart Notes Dashboard:** A robust Markdown-ready note-taking interface equipped with a real-time keystroke auto-saver and seamlessly switch between Grid (Card) and List layouts.
-* **🎯 Target Goal Setter:** A predictive algorithm that calculates the GPA required in remaining semesters to confidently hit your desired target CGPA.
-* **🧮 Dual-Mode Calculator System:** 
-  * *Quick Calc:* A standard minimalist layout with dynamic cursors and custom calculation histories.
-  * *Pro Sci-Calc:* A powerful, hardware-locked landscape scientific calculator featuring a 50-button layout for complex engineering formulas.
-* **📊 CO-PO Analyzer:** Effortlessly evaluate internal assessments to track Course Outcomes and Program Outcomes.
-* **🏛️ Institutional Hub:** Quickly access faculty and department Vision and Mission statements.
+### 🎓 Academic Productivity
 
-### 📱 Premium Native & UI Overhauls
-* **🌓 Immersive Application-Wide UI Re-Skin:** Features elevated components across every screen with standard glassmorphism containers, refined responsive layouts, and automatic native keyboard auto-dismiss controls on background tap.
-* **🔔 Native Assignment Alarms:** Leverages the Cordova Local Notification framework to push lock-screen and status-bar alerts when deadlines approach, featuring intelligent 3-hour repeat intervals and instant OS cancel scheduling upon task completion.
-* **🛡️ Two-Layer "Time Travel" Blocker:** UI date picker restrictions paired with strict script calculation evaluations to prevent assignments from being saved with past due dates.
-* **📍 Safe Area Geometry Adjustments:** Engineered structural alignment adjustments to the main structural navigation header and footer, completely fixing color anomalies near mobile gesture notches for edge-to-edge screens.
-* **🌄 Time-Sensitive Home Engine:** Dynamically transforms the Home greeting header layout and graphical background states based on the user's current time of day (Morning, Afternoon, Evening, Night).
-* **🔄 Seamless Onboarding Prompts:** Promotes higher user compliance through an elegantly integrated permission "Soft Prompt" clarifying system notification usage prior to system dialogs.
-* **🚀 Git-Powered Update Alerts:** An internal release pipeline checking the installed version against the latest GitHub release to display download banners natively inside the app.
+- **Advanced CGPA Tracker** — Manage multiple student profiles, semester GPAs, and visualize academic progress using interactive charts.
+- **NPTEL Course Tracker** — Enter all 12 weekly assignment scores, automatically calculate the Top 8, internal marks (out of 25), and determine Elite, Silver, or Gold certificate eligibility.
+- **Target Goal Setter** — Predict the GPA required in future semesters to achieve your desired CGPA.
+- **CO-PO Analyzer** — Track Course Outcomes and Program Outcomes for internal assessments.
+- **Institutional Hub** — Access department Vision & Mission statements anytime.
+
+---
+
+### 📅 Smart Planning
+
+- **Interactive Timetable**
+  - Live "Happening Now" detection
+  - "Up Next" class preview
+  - Automatic overlap prevention
+  - Daily scheduling interface
+
+- **Assignment Manager**
+  - Multiple reminders
+  - Smart notification scheduling
+  - Automatic cancellation when completed
+  - Due date validation
+
+---
+
+### 📝 Smart Notes
+
+- Markdown-ready editor
+- Automatic real-time saving
+- Undo / Redo
+- One-Tap Copy
+- Live Word Counter
+- Live Character Counter
+- Grid & List layouts
+
+---
+
+### 🧮 Calculator Suite
+
+#### Quick Calc
+
+- Standard calculator
+- Calculation history
+- Dynamic cursor support
+
+#### Pro Scientific Calculator
+
+- 50-button engineering layout
+- Secure math parsing engine
+- Landscape-only mode
+- Improved calculation accuracy
+- Better display scaling
+
+---
+
+### ⏱️ Focus Timer
+
+- Pomodoro Timer
+- Animated progress ring
+- Study & Break modes
+- Native audio alerts
+
+---
+
+### 📱 Native Android Experience
+
+- Android 14 Exact Alarm support
+- Native Local Notifications
+- Smart Hardware Back Button
+- Automatic keyboard dismissal
+- Edge-to-edge Safe Area support
+- Dynamic Home greeting
+- Light & Dark themes
+- GitHub Update Checker
+
+---
+
+### ⚡ Performance Improvements
+
+- Completely modular JavaScript architecture
+- Faster loading
+- Improved memory management
+- Easier future maintenance
+- Better overall responsiveness
+
 
 ## 🛠️ Tech Stack
 
-* **Framework:** Apache Cordova (Native Wrapper)
-* **Logic Engine:** Vanilla JavaScript (ES6+ Architecture)
-* **Styling Framework:** Tailwind CSS 
-* **Data Layer:** HTML5 LocalStorage (Native Persistence)
-* **Chart Component:** Chart.js (Optimized for Dark Theme inversion)
+- **Framework:** Apache Cordova
+- **Programming Language:** Vanilla JavaScript (ES6+ Modular Architecture)
+- **Frontend:** HTML5
+- **Styling:** Tailwind CSS
+- **Charts:** Chart.js
+- **Storage:** HTML5 LocalStorage
+- **Notifications:** Cordova Local Notifications
+- **Screen Management:** Cordova Screen Orientation
+- **Platform:** Android
 
 ## 🚀 Getting Started
 
@@ -53,7 +125,7 @@ AU Smart Hub is a premium, full-scale student productivity suite designed specif
    git clone https://github.com/amudhan-mohan/ausmarthub.git
    cd ausmarthub
    ```
-2. Install project dependencies::
+2. Install project dependencies:
     ```bash
     npm install
     ```
@@ -62,13 +134,14 @@ AU Smart Hub is a premium, full-scale student productivity suite designed specif
     cordova platform add android
     cordova plugin add cordova-plugin-screen-orientation
     cordova plugin add cordova-plugin-splashscreen
-    cordova plugin add cordova-plugin-local-notifications
+    cordova plugin add cordova-plugin-local-notification
+    cordova plugin add cordova-plugin-device
     ```
 4. Run the Tailwind CSS compiler (watch mode):
     ```bash
     npm run watch
     ```
-5. Build the Tailwind CSS (Stop the watch process before running this command.):
+5. Build the production Tailwind CSS (Stop the watch process before running this command.):
     ```bash
     npm run build:css
     ```
@@ -78,5 +151,14 @@ AU Smart Hub is a premium, full-scale student productivity suite designed specif
     ```
 7. To generate a release build:
     ```bash
-    cordova build android
+    cordova build android --release
     ```
+## 📥 Download
+
+Download the latest APK from the Releases page.
+
+👉 https://github.com/amudhan-mohan/ausmarthub/releases/latest
+
+## 📄 License
+
+This project is licensed under the MIT License.
