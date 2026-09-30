@@ -7,7 +7,7 @@ let vmData = {
             mission: [
                 "Provide quality technical education with a sound footing on basic engineering principles, technical and managerial skills, and innovative research capabilities.",
                 "Transform the students into outstanding professionals and technocrats with strong ethical values capable of creating, developing and managing global engineering enterprises.",
-                "Develop a Global Knowledge Hub, striving continuously in pursuit of excellence in Education, Research, Entrepreneurship and Technological services to the Industry and Society. ",
+                "Develop a Global Knowledge Hub, striving continuously in pursuit of excellence in Education, Research, Entrepreneurship and Technological services to the Industry and Society.",
                 "Inculcate the importance and methodology of life-long learning to move forward with updated knowledge to face the challenges of tomorrow."
             ],
             departments: [
@@ -17,7 +17,7 @@ let vmData = {
                     vision: "Strive to be widely acknowledged as a department imparting Chemical Engineering with a strong three pronged commitment to education, research and extension to effectively address the societal needs fostered by a culture encompassing innovation, ethics and excellence and by embracing the good practices in education.",
                     mission: [
                         "Impart quality Chemical Engineering education through a carefully devised program garnered by a curriculum meeting the global benchmarks with an extensive exposure to fundamentals and industrial applications",
-                        "Transform the students and render them to take up successful careers in Chemical Engineering and prepare them to be leaders and responsible citizens in order to contribute to the society by exhibiting highest degree of professional standards, integrity and ethics. ",
+                        "Transform the students and render them to take up successful careers in Chemical Engineering and prepare them to be leaders and responsible citizens in order to contribute to the society by exhibiting highest degree of professional standards, integrity and ethics.",
                         "Expose the students to real time industrial problems and imbibe entrepreneurship by engaging them with interactions involving experts from the industry and the alumni.",
                         "Infuse the students with social responsibility to meet the future challenges to provide pertinent solutions for sustainable development through professional competency."
                     ]
@@ -51,7 +51,7 @@ let vmData = {
                     name: "Department of Computer Science & Engineering",
                     vision: "To provide a congenial ambience for individuals to develop and blossom as academically superior, socially conscious and nationally responsible citizens.",
                     mission: [
-                        "Impart high quality computer knowledge to the students through a dynamic scholastic environment wherein they learn to develop technical,communication and leadership skills to bloom as a versatile professional.",
+                        "Impart high quality computer knowledge to the students through a dynamic scholastic environment wherein they learn to develop technical, communication and leadership skills to bloom as a versatile professional.",
                         "Develop life-long learning ability that allows them to be adaptive and responsive to the changes in career, society, technology, and environment.",
                         "Build student community with high ethical standards to undertake innovative research and development in thrust areas of national and international needs.",
                         "Expose the students to the emerging technological advancements for meeting the demands of the industry."
@@ -143,7 +143,7 @@ let vmData = {
             ]
         }
     ],
-    selectedFaculty: null,
+    selectedFaculty: "fac_engineering",
     selectedDepartment: null
 };
 
@@ -153,28 +153,31 @@ function renderVisionMission() {
         selectedFaculty.departments.find(d => d.id === vmData.selectedDepartment) : null;
 
     return `
-        <!-- Header Section -->
-        <div class="flex items-center justify-between mb-5">
-            <div class="flex items-center gap-2">
-                <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-white">Vision & Mission</h1>
+        <!-- Vision & Mission Header -->
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-xl bg-blue-500/10 dark:bg-blue-400/15 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                    <svg width="20" height="20" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M30.9,5.6C30.8,5.2,30.4,5,30,5h-3V2c0-0.4-0.2-0.8-0.6-0.9C26,0.9,25.6,1,25.3,1.3l-4,4C21.1,5.5,21,5.7,21,6v3.6l-5.7,5.7 c-0.4,0.4-0.4,1,0,1.4c0.2,0.2,0.5,0.3,0.7,0.3s0.5-0.1,0.7-0.3l5.7-5.7H26c0.3,0,0.5-0.1,0.7-0.3l4-4C31,6.4,31.1,6,30.9,5.6z"/>
+                        <path d="M18.1,18.1C17.6,18.7,16.8,19,16,19s-1.6-0.3-2.1-0.9c-1.2-1.2-1.2-3.1,0-4.2l2.8-2.8C16.5,11,16.2,11,16,11 c-2.8,0-5,2.2-5,5s2.2,5,5,5s5-2.2,5-5c0-0.2,0-0.5-0.1-0.7L18.1,18.1z"/>
+                        <path d="M28.1,12.1C27.6,12.7,26.8,13,26,13h-2.8l-0.7,0.7c0.3,0.7,0.4,1.5,0.4,2.3c0,3.9-3.1,7-7,7s-7-3.1-7-7s3.1-7,7-7 c0.8,0,1.6,0.2,2.3,0.4L19,8.8V6c0-0.8,0.3-1.6,0.9-2.1l1-1C19.3,2.3,17.7,2,16,2C8.3,2,2,8.3,2,16s6.3,14,14,14s14-6.3,14-14 c0-1.7-0.3-3.3-0.9-4.9L28.1,12.1z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-slate-900 dark:text-white tracking-tight">Vision & Mission</h1>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Institutional & Department Objectives</p>
+                </div>
             </div>
-            <div class="text-xs px-3 py-1 rounded-full bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-200">
-                Institutional Goals
+            <div class="text-xs px-2.5 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold">
+                AU Standards
             </div>
         </div>
 
-        <!-- Faculty Dropdown -->
-        <div class="card mb-4">
-            <h3 class="font-bold mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                    <circle cx="12" cy="7" r="4"/>
-                </svg>
-                Select Faculty
-            </h3>
+        <!-- Faculty Selector Card -->
+        <div class="card p-3.5 mb-3 border border-slate-100 dark:border-white/5">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">Faculty</label>
             <select id="facultySelect" onchange="onFacultyChange(this.value)" 
-                class="w-full p-3 rounded-xl border bg-white text-gray-800 dark:bg-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition">
-                <option value="">-- Select a Faculty --</option>
+                class="input w-full font-bold text-xs py-2.5">
                 ${vmData.faculties.map(faculty => `
                     <option value="${faculty.id}" ${vmData.selectedFaculty === faculty.id ? 'selected' : ''}>
                         ${faculty.name}
@@ -183,19 +186,13 @@ function renderVisionMission() {
             </select>
         </div>
 
-        ${vmData.selectedFaculty ? `
-        <!-- Department Dropdown -->
-        <div class="card mb-4">
-            <h3 class="font-bold mb-3 flex items-center gap-2 text-gray-700 dark:text-gray-200">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <path d="M3 9h18M9 21v-6h6v6"/>
-                </svg>
-                Select Department
-            </h3>
+        ${selectedFaculty ? `
+        <!-- Department Selector Card -->
+        <div class="card p-3.5 mb-4 border border-slate-100 dark:border-white/5">
+            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 block">Select Department</label>
             <select id="departmentSelect" onchange="onDepartmentChange(this.value)" 
-                class="w-full p-3 rounded-xl border bg-white text-gray-800 dark:bg-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 transition">
-                <option value="">-- Select a Department --</option>
+                class="input w-full font-bold text-xs py-2.5">
+                <option value="">-- Choose Department (Optional) --</option>
                 ${selectedFaculty.departments.map(dept => `
                     <option value="${dept.id}" ${vmData.selectedDepartment === dept.id ? 'selected' : ''}>
                         ${dept.name}
@@ -204,103 +201,100 @@ function renderVisionMission() {
             </select>
         </div>
         ` : ''}
-
-        <!-- Faculty Vision & Mission (Always visible when faculty is selected) -->
-        ${vmData.selectedFaculty ? `
-        <div class="card mt-4">
-            <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-blue-600 dark:text-blue-400">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
-                </svg>
-                <h3 class="font-bold text-lg text-gray-800 dark:text-white">${selectedFaculty.name}</h3>
-            </div>
-            <div class="space-y-4">
-                <div class="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-                    <h4 class="font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-2">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 8v4l3 3"/>
-                        </svg>
-                        Faculty Vision
-                    </h4>
-                    <p class="text-gray-700 dark:text-gray-200 leading-relaxed">${selectedFaculty.vision}</p>
+        ${selectedFaculty ? `
+        <!-- Faculty Vision & Mission Card -->
+        <div class="card vision-card p-4 mb-4 border-l-4 border-blue-500">
+            <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-white/5">
+                <div class="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xs">
+                    FAC
                 </div>
-                <div class="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                    <h4 class="font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center gap-2">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white leading-tight">${escapeHtml(selectedFaculty.name)}</h3>
+            </div>
+
+            <div class="space-y-3">
+                <div class="p-3 rounded-xl bg-blue-500/5 border border-blue-500/10">
+                    <span class="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1.5 mb-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                        Faculty Vision
+                    </span>
+                    <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">${selectedFaculty.vision}</p>
+                </div>
+
+                <div class="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                    <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mb-2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                         Faculty Mission
-                    </h4>
-                    <ul class="list-disc ml-5 text-gray-700 dark:text-gray-200 space-y-1">
-                        ${selectedFaculty.mission.map(m => `<li>${m}</li>`).join("")}
+                    </span>
+                    <ul class="space-y-1.5 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                        ${selectedFaculty.mission.map(m => `
+                            <li class="flex items-start gap-2">
+                                <span class="text-emerald-500 font-bold shrink-0">•</span>
+                                <span>${m}</span>
+                            </li>
+                        `).join("")}
                     </ul>
                 </div>
             </div>
         </div>
         ` : ''}
-
-        <!-- Department Vision & Mission (Shows when department is selected, otherwise shows message) -->
-        ${vmData.selectedDepartment ? `
-        <div class="card mt-4">
-            <div class="flex items-center gap-2 mb-4 pb-2 border-b border-gray-200 dark:border-gray-700">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-purple-600 dark:text-purple-400">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <path d="M3 9h18M9 21v-6h6v6"/>
-                </svg>
-                <h3 class="font-bold text-lg text-gray-800 dark:text-white">${selectedDepartment.name}</h3>
-            </div>
-            <div class="space-y-4">
-                <div class="p-4 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-                    <h4 class="font-semibold text-blue-700 dark:text-blue-300 mb-2 flex items-center gap-2">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <path d="M12 8v4l3 3"/>
-                        </svg>
-                        Department Vision
-                    </h4>
-                    <p class="text-gray-700 dark:text-gray-200 leading-relaxed">${selectedDepartment.vision}</p>
+        
+        ${selectedDepartment ? `
+        <!-- Department Vision & Mission Card -->
+        <div class="card vision-card p-4 mb-4 border-l-4 border-indigo-500 shadow-md">
+            <div class="flex items-center gap-2 mb-3 pb-2 border-b border-slate-100 dark:border-white/5">
+                <div class="w-7 h-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs">
+                    DEP
                 </div>
-                <div class="p-4 rounded-xl bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-                    <h4 class="font-semibold text-green-700 dark:text-green-300 mb-2 flex items-center gap-2">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
-                        </svg>
+                <h3 class="font-bold text-sm text-slate-900 dark:text-white leading-tight">${escapeHtml(selectedDepartment.name)}</h3>
+            </div>
+
+            <div class="space-y-3">
+                <div class="p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/10">
+                    <span class="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5 mb-1.5">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                        Department Vision
+                    </span>
+                    <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">${selectedDepartment.vision}</p>
+                </div>
+
+                <div class="p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+                    <span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5 mb-2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                         Department Mission
-                    </h4>
-                    <ul class="list-disc ml-5 text-gray-700 dark:text-gray-200 space-y-1">
-                        ${selectedDepartment.mission.map(m => `<li>${m}</li>`).join("")}
+                    </span>
+                    <ul class="space-y-1.5 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                        ${selectedDepartment.mission.map(m => `
+                            <li class="flex items-start gap-2">
+                                <span class="text-emerald-500 font-bold shrink-0">•</span>
+                                <span>${m}</span>
+                            </li>
+                        `).join("")}
                     </ul>
                 </div>
             </div>
-        </div>
-
-        <!-- Reset Button -->
-        <button onclick="resetVisionMission()" class="btn-secondary btn mt-4 w-full flex items-center justify-center gap-2">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-            </svg>
-            Clear Selection
-        </button>
-        ` : vmData.selectedFaculty ? `
-        <!-- Message when faculty selected but no department -->
-        <div class="card mt-4 text-center py-6">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="mx-auto mb-3 text-gray-400 dark:text-gray-500">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <path d="M3 9h18M9 21v-6h6v6"/>
-            </svg>
-            <p class="text-gray-600 dark:text-gray-300">Select a department to view department vision & mission</p>
         </div>
         ` : ''}
     `;
 }
 
-function onFacultyChange(facultyId) { vmData.selectedFaculty = facultyId || null; vmData.selectedDepartment = null; render(); }
-function onDepartmentChange(departmentId) { vmData.selectedDepartment = departmentId || null; render(); }
-function resetVisionMission() { vmData.selectedFaculty = null; vmData.selectedDepartment = null; render(); }
+function onFacultyChange(facultyId) {
+    vmData.selectedFaculty = facultyId || null;
+    vmData.selectedDepartment = null;
+    triggerHaptic(10);
+    render();
+}
+
+function onDepartmentChange(departmentId) {
+    vmData.selectedDepartment = departmentId || null;
+    triggerHaptic(10);
+    render();
+}
+
+function resetVisionMission() {
+    vmData.selectedFaculty = "fac_engineering";
+    vmData.selectedDepartment = null;
+    render();
+}
 
 window.onFacultyChange = onFacultyChange;
 window.onDepartmentChange = onDepartmentChange;

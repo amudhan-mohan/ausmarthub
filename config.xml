@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="com.aucse.smarthub" version="1.0.16"
+<widget id="com.aucse.smarthub" version="1.0.18"
     xmlns="http://www.w3.org/ns/widgets"
     xmlns:cdv="http://cordova.apache.org/ns/1.0"
     xmlns:android="http://schemas.android.com/apk/res/android">
@@ -15,26 +15,43 @@
         Amudhan Mohan
     </author>
 
+    <!-- Auto-inject version from config.xml → www/js/core/app-version.js -->
+    <hook type="before_prepare" src="hooks/before_prepare/inject_version.js" />
+
     <content src="index.html" />
 
     <!-- Allow Internet -->
     <allow-intent href="http://*/*" />
     <allow-intent href="https://*/*" />
+
+    <!-- InAppBrowser Plugin -->
+    <plugin name="cordova-plugin-inappbrowser" />
+    <plugin name="cordova-plugin-vibration" />
     
-    <!-- SPLASH -->
     <platform name="android">
     
         <!-- APP ICON -->
 	    <icon src="www/img/au_smart_hub.png" />
 
         <resource-file src="www/img/notify_icon.png" target="app/src/main/res/drawable/notify_icon.png" />
-	
-        <!-- Splash Screen -->
-        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/img/au_smart_hub.png" />
-        <preference name="AndroidWindowSplashScreenBackground" value="#f8fafc" />
+
+        <!-- Android 12+ Splash Screen Configuration (Removes Cordova Robot Logo) -->
+        <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/img/splash_transparent.png" />
+        <preference name="AndroidWindowSplashScreenBackground" value="#0d2540" />
+        <preference name="SplashScreen" value="none" />
+        <preference name="SplashScreenDelay" value="0" />
+        <preference name="AutoHideSplashScreen" value="true" />
+        <preference name="ShowSplashScreen" value="false" />
+        <preference name="FadeSplashScreen" value="false" />
+
+        <!-- Enable Modern Android 13+ / Samsung Gesture Navigation Back Callback -->
+        <edit-config file="AndroidManifest.xml" target="/manifest/application" mode="merge">
+            <application android:enableOnBackInvokedCallback="true" />
+        </edit-config>
 
         <config-file target="AndroidManifest.xml" parent="/manifest">
             <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+            <uses-permission android:name="android.permission.VIBRATE" />
         </config-file>
     </platform>
 

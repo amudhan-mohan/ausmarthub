@@ -20,7 +20,7 @@ const NOTIFY_COOLDOWN_MS = 3 * 60 * 60 * 1000; // 3 Hours in milliseconds
 async function setupNotifications() {
 
     // CORDOVA (real device / installed app)
-    if (window.cordova && cordova.plugins.notification.local) {
+    if (window.cordova && cordova.plugins?.notification?.local) {
         ensureNotificationChannel();
         return;
     }
@@ -71,7 +71,7 @@ function checkAssignmentsAndNotify() {
             if (now - lastNotified >= NOTIFY_COOLDOWN_MS) {
 
                 // Dynamic text for the background checker
-                let notifTitle = diffDays === 0 ? "Deadline Today! 🚨" : "Deadline Tomorrow! ⏳";
+                let notifTitle = diffDays === 0 ? "Deadline Today!" : "Deadline Tomorrow!";
                 let notifText = diffDays === 0 ? `Don't forget: "${task.title}" is due TODAY.` : `Don't forget: "${task.title}" is due tomorrow.`;
 
                 triggerDeviceNotification(notifTitle, notifText);
@@ -114,7 +114,7 @@ function triggerDeviceNotification(title, body) {
 
 // ================= EXACT ALARM PERMISSION (Android 13+/14+) =================
 function checkExactAlarmPermission() {
-    if (!(window.cordova && cordova.plugins.notification.local && cordova.plugins.notification.local.canScheduleExactAlarms)) return;
+    if (!(window.cordova && cordova.plugins?.notification?.local?.canScheduleExactAlarms)) return;
 
     cordova.plugins.notification.local.canScheduleExactAlarms(function (granted) {
         if (!granted) {
@@ -143,7 +143,7 @@ document.addEventListener("resume", checkExactAlarmPermission, false);
 // ================= NOTIFICATION ONBOARDING =================
 function checkFirstTimePermissions() {
     // Only run if Cordova is ready
-    if (window.cordova && cordova.plugins.notification.local) {
+    if (window.cordova && cordova.plugins?.notification?.local) {
         let hasAsked = localStorage.getItem("notif_prompt_shown");
 
         if (!hasAsked) {

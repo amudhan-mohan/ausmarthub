@@ -29,3 +29,5 @@ node_modules/
 
 # Tailwind output (optional, but good if you only want to track input)
 /www/css/output.css
+
+/release/*

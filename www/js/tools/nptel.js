@@ -1,7 +1,7 @@
 let nptelProfiles = safeJSONParse("smarthub_nptel", []);
 let currentNptelIndex = null;
 
-function saveNptel() { 
+function saveNptel() {
     localStorage.setItem("smarthub_nptel", JSON.stringify(nptelProfiles));
 }
 
@@ -15,7 +15,7 @@ function renderNptelProfiles() {
                 <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-100">NPTEL Courses</h1>
             </div>
             <div class="text-xs px-3 py-1 rounded-full bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 font-medium">
-                ${nptelProfiles.length} Courses
+                ${nptelProfiles.length} ${nptelProfiles.length === 1 ? 'Course' : 'Courses'}
             </div>
         </div>
         
@@ -40,15 +40,15 @@ function renderNptelProfiles() {
         `;
     } else {
         nptelProfiles.forEach((p, idx) => {
-            let valid = p.assignments.filter(score => score !== '').map(Number);
+            let valid = (p.assignments || []).filter(score => score !== '').map(Number);
             let avg = valid.length > 0 ? [...valid].sort((a, b) => b - a).slice(0, 8).reduce((a, b) => a + b, 0) / 8 : 0;
             let internal = ((avg * 25) / 100).toFixed(2);
 
             html += `
                 <div class="card flex justify-between items-center cursor-pointer hover:bg-gray-50 dark:hover:bg-white/5 transition border-l-4 ${internal >= 10 ? 'border-green-500' : 'border-indigo-500'}" onclick="openNptelProfile(${idx})">
                     <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 font-bold text-lg shadow-inner">
-                            ${p.name.charAt(0).toUpperCase()}
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-[#103654] via-[#1F618D] to-[#51A5D4] flex items-center justify-center text-white font-extrabold text-lg shrink-0 shadow-md border border-white/20">
+                            ${(p.name || "C").charAt(0).toUpperCase()}
                         </div>
                         <div>
                             <h3 class="font-bold text-gray-800 dark:text-gray-100 text-base">${escapeHtml(p.name)}</h3>
@@ -73,7 +73,7 @@ function renderNptelProfiles() {
         });
 
         html += `
-            <button onclick="createNptelProfile()" class="btn mt-2 flex items-center justify-center gap-2 w-full bg-gray-800 dark:bg-gray-200 text-white dark:text-gray-900">
+            <button onclick="createNptelProfile()" class="btn mt-2 flex items-center justify-center gap-2 w-full">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                 Add New Course
             </button>
@@ -93,15 +93,16 @@ function createNptelProfile() {
 }
 
 function editNptelProfile(idx) {
+    if (!nptelProfiles[idx]) return;
     let currentName = nptelProfiles[idx].name;
-    
+
     showInputModal(
         "Edit NPTEL Course",
         "e.g. Cloud Computing",
         currentName,
         "Save Changes",
         (newName) => {
-            if (newName !== currentName) {
+            if (newName && newName !== currentName) {
                 nptelProfiles[idx].name = newName;
                 saveNptel();
                 render();
@@ -117,6 +118,7 @@ function openNptelProfile(idx) {
 }
 
 function deleteNptelProfile(idx) {
+    if (!nptelProfiles[idx]) return;
     showConfirm("Delete Course?", `Are you sure you want to delete ${nptelProfiles[idx].name}?`, "Delete", () => {
         nptelProfiles.splice(idx, 1);
         saveNptel();
@@ -125,17 +127,22 @@ function deleteNptelProfile(idx) {
 }
 
 function updateNptelScore(idx, value) {
+    if (currentNptelIndex === null || !nptelProfiles[currentNptelIndex]) return;
     let profile = nptelProfiles[currentNptelIndex];
+    if (!profile.assignments || !Array.isArray(profile.assignments)) {
+        profile.assignments = Array(12).fill("");
+    }
     profile.assignments[idx] = value === '' ? '' : Math.min(100, Math.max(0, parseFloat(value) || 0));
     saveNptel();
     render();
 }
 
 function resetNptelProfile() {
+    if (currentNptelIndex === null || !nptelProfiles[currentNptelIndex]) return;
     showConfirm(
-        "Reset Scores?", 
-        "Are you sure you want to clear all 12 assignment scores? This cannot be undone.", 
-        "Reset", 
+        "Reset Scores?",
+        "Are you sure you want to clear all 12 assignment scores? This cannot be undone.",
+        "Reset",
         () => {
             nptelProfiles[currentNptelIndex].assignments = Array(12).fill("");
             saveNptel();
@@ -145,8 +152,27 @@ function resetNptelProfile() {
 }
 
 function renderNptelCalc() {
-    let profile = nptelProfiles[currentNptelIndex];
-    if (!profile) return "";
+    let profile = (currentNptelIndex !== null && nptelProfiles[currentNptelIndex]) ? nptelProfiles[currentNptelIndex] : null;
+    if (!profile) {
+        if (nptelProfiles.length > 0) {
+            currentNptelIndex = 0;
+            profile = nptelProfiles[0];
+        } else {
+            return `
+                <div class="card text-center py-10">
+                    <h2 class="text-base font-bold text-slate-900 dark:text-white mb-2">No Course Selected</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Please select an NPTEL course from your course list.</p>
+                    <button onclick="navigate('nptel-profiles')" class="btn mx-auto">
+                        &larr; View NPTEL Courses
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    if (!profile.assignments || !Array.isArray(profile.assignments)) {
+        profile.assignments = Array(12).fill("");
+    }
 
     let validAssignments = profile.assignments.filter(score => score !== '').map(Number);
     let bestAssignments = [...validAssignments].sort((a, b) => b - a).slice(0, 8);
@@ -174,7 +200,7 @@ function renderNptelCalc() {
                     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Enter scores out of 100. Best 8 are automatically chosen.</p>
                 </div>
                 
-                <!-- NEW: Reset Button -->
+                <!-- Reset Button -->
                 <button onclick="resetNptelProfile()" class="text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1.5 rounded-lg transition flex items-center gap-1 shrink-0 font-bold">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"></path><path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path><path d="M21 22v-6h-6"></path><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path></svg>
                     Reset
@@ -185,15 +211,15 @@ function renderNptelCalc() {
                 ${profile.assignments.map((score, i) => `
                     <div>
                         <label class="block text-[10px] font-bold text-gray-400 uppercase ml-1 mb-1">A${i + 1}</label>
-                        <input type="number" min="0" max="100" inputmode="decimal" class="input w-full text-center nptel-input" placeholder="-" value="${score}" 
+                        <input type="number" min="0" max="100" inputmode="decimal" class="input w-full text-center nptel-input font-bold" placeholder="-" value="${score}" 
                             onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46"
                             onchange="updateNptelScore(${i}, this.value)">
                     </div>
                 `).join('')}
             </div>
-            <div class="bg-blue-50 border border-blue-200 rounded-lg mt-4 p-4">
-                <h3 class="font-semibold text-blue-800 mb-2 flex items-center">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <div class="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/40 rounded-lg mt-4 p-4">
+                <h3 class="font-semibold text-blue-800 dark:text-blue-300 mb-2 flex items-center gap-2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
                         <polyline points="14,2 14,8 20,8"/>
                         <line x1="16" y1="13" x2="8" y2="13"/>
@@ -202,7 +228,7 @@ function renderNptelCalc() {
                     </svg>
                     Calculation Formula:
                 </h3>
-                <p class="text-blue-700 text-sm">Internal Marks = (Average of Best 8 Assignments × 25) ÷ 100</p>
+                <p class="text-blue-700 dark:text-blue-400 text-sm">Internal Marks = (Average of Best 8 Assignments × 25) ÷ 100</p>
             </div>
         </div>
     `;
@@ -226,7 +252,7 @@ function renderNptelCalc() {
 
         html += `
             <div class="card !p-0 overflow-hidden mb-5">
-                <div class="bg-white dark:bg-[#1c1c1e] p-6">
+                <div class="bg-white dark:bg-[#101726] p-5 sm:p-6 rounded-[var(--radius-lg)]">
                     
                     <div class="flex items-center justify-center mb-6">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-800 dark:text-gray-100"><line x1="12" y1="20" x2="12" y2="10"></line><line x1="18" y1="20" x2="18" y2="4"></line><line x1="6" y1="20" x2="6" y2="16"></line></svg>
@@ -235,12 +261,12 @@ function renderNptelCalc() {
 
                     <!-- Best Assignments Used -->
                     <div class="mb-6">
-                        <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">Best 8 Assignments Used (out of ${validAssignments.length} entered):</h3>
+                        <h3 class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300 mb-3">Best 8 Assignments Used (out of ${validAssignments.length} entered):</h3>
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
                             ${bestAssignments.map((score, index) => `
                                 <div class="bg-green-50 dark:bg-green-900/10 border border-green-200 dark:border-green-900/30 rounded-lg p-3 text-center">
                                     <div class="text-xs text-green-600 dark:text-green-400">Top Score ${index + 1}</div>
-                                    <div class="font-bold text-green-800 dark:text-green-300">${score.toFixed(1)}</div>
+                                    <div class="font-bold text-green-800 dark:text-green-300 font-mono">${score.toFixed(1)}</div>
                                 </div>
                             `).join('')}
                         </div>
@@ -249,25 +275,25 @@ function renderNptelCalc() {
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <!-- Calculation Steps -->
                         <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 flex items-center">
-                                <svg class="mr-2" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="16" y2="14"></line><line x1="8" y1="18" x2="16" y2="18"></line><line x1="12" y1="6" x2="12" y2="18"></line></svg>
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300 flex items-center">
+                                <svg class="mr-2" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="8" y1="6" x2="16" y2="6"></line><line x1="8" y1="10" x2="16" y2="10"></line><line x1="8" y1="14" x2="16" y2="14"></line><line x1="8" y1="18" x2="16" y2="18"></line><line x1="12" y1="6" x2="12" y2="18"></line></svg>
                                 Calculation Steps
                             </h3>
                             <div class="space-y-3 text-sm text-gray-600 dark:text-gray-400">
                                 <div class="flex justify-between items-center">
                                     <span>Average of Best 8:</span>
                                     <div class="text-right">
-                                        <span class="font-semibold text-gray-800 dark:text-gray-200">${avgAssignmentScore.toFixed(2)}/100</span>
+                                        <span class="font-semibold text-gray-800 dark:text-gray-200 font-mono">${avgAssignmentScore.toFixed(2)}/100</span>
                                     </div>
                                 </div>
                                 <div class="flex justify-between items-center">
                                     <span>Weight (25%):</span>
-                                    <span class="font-semibold text-gray-800 dark:text-gray-200">× 0.25</span>
+                                    <span class="font-semibold text-gray-800 dark:text-gray-200 font-mono">× 0.25</span>
                                 </div>
                                 <div class="border-t border-gray-200 dark:border-gray-700 pt-2">
                                     <div class="flex justify-between items-center">
                                         <span class="font-semibold text-gray-800 dark:text-gray-200">Internal Marks:</span>
-                                        <span class="text-xl font-bold ${colorClass}">${internalMarks.toFixed(2)}/25</span>
+                                        <span class="text-xl font-bold font-mono ${colorClass}">${internalMarks.toFixed(2)}/25</span>
                                     </div>
                                 </div>
                             </div>
@@ -275,8 +301,8 @@ function renderNptelCalc() {
 
                         <!-- Eligibility Status -->
                         <div class="space-y-4">
-                            <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-300 flex items-center">
-                                <svg class="mr-2" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path></svg>
+                            <h3 class="text-base sm:text-lg font-semibold text-gray-700 dark:text-gray-300 flex items-center">
+                                <svg class="mr-2" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path></svg>
                                 Eligibility Status
                             </h3>
                             <div class="p-4 rounded-lg ${bgClass} border ${borderClass}">
@@ -287,7 +313,7 @@ function renderNptelCalc() {
                                         </svg>
                                         <span class="font-semibold">${statusText}</span>
                                     </div>
-                                    <span class="text-lg font-bold ${colorClass}">${internalMarks.toFixed(2)}/25</span>
+                                    <span class="text-lg font-bold font-mono ${colorClass}">${internalMarks.toFixed(2)}/25</span>
                                 </div>
                                 <p class="text-sm mt-2 text-gray-700 dark:text-gray-300">${statusMessage}</p>
                             </div>
@@ -298,7 +324,7 @@ function renderNptelCalc() {
                     <div class="mt-6">
                         <div class="flex justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
                             <span>Internal Marks Progress</span>
-                            <span class="font-bold text-gray-800 dark:text-gray-200">${internalMarks.toFixed(2)}/25</span>
+                            <span class="font-bold text-gray-800 dark:text-gray-200 font-mono">${internalMarks.toFixed(2)}/25</span>
                         </div>
                         <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-4">
                             <div class="h-4 rounded-full transition-all duration-500 ${progressColor}" style="width: ${progressPerc}%;"></div>
@@ -355,7 +381,7 @@ function renderNptelCalc() {
                                     <div class="font-semibold text-green-800 dark:text-green-500 text-xs">Successfully Completed</div>
                                 </div>
                             </div>
-                            <p class="text-purple-700 dark:text-purple-400 text-[10px] italic text-center">Note: Final Score = Internal Marks (25%) + Theory Exam (75%)</p>
+                            <p class="text-purple-700 dark:text-purple-400 text-[10px] italic text-center">Note: Final Score = Internal Marks (25%) + Theory Exam (75%))</p>
                         </div>
                     </div>
                     ` : ''}

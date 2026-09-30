@@ -1,2 +1,12 @@
 @import "tailwindcss";
+@source "../index.html";
+@source "../js/**/*.js";
+
 @custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Saira', 'TamilFont', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'TamilFont', ui-monospace, monospace;
+  --font-tamil: 'TamilFont', 'Saira', system-ui, sans-serif;
+  --font-old-english: 'OldEnglish', 'Old English Five', serif;
+}

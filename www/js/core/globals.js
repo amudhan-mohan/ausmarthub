@@ -28,8 +28,26 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+function triggerHaptic(ms = 20) {
+    try {
+        if (typeof navigator !== 'undefined') {
+            if (navigator.vibrate) {
+                navigator.vibrate(ms);
+            } else if (navigator.notification && typeof navigator.notification.vibrate === 'function') {
+                const dur = Array.isArray(ms) ? ms[0] : ms;
+                navigator.notification.vibrate(dur || 20);
+            }
+        }
+    } catch (e) {}
+}
+
 function getGP(g) {
-    return { "S": 10, "A": 9, "B": 8, "C": 7, "D": 6, "E": 5, "RA": 0 }[g];
+    if (!g) return 0;
+    const map = { 
+        "S": 10, "A": 9, "B": 8, "C": 7, "D": 6, "E": 5, "RA": 0,
+        "O": 10, "A+": 9, "B+": 7, "AB": 0, "U": 0, "W": 0 
+    };
+    return map[g] !== undefined ? map[g] : 0;
 }
 
 // ================= THEME =================
@@ -67,7 +85,9 @@ function toggleTheme() {
 }
 
 // ================= AUTO UPDATE CHECKER =================
-const CURRENT_APP_VERSION = "1.0.16";
+// Version is auto-injected from config.xml via hooks/before_prepare/inject_version.js
+// → www/js/core/app-version.js sets window.APP_VERSION before this file loads.
+const CURRENT_APP_VERSION = window.APP_VERSION || "1.0.18";
 const GITHUB_REPO = "amudhan-mohan/ausmarthub";
 
 async function checkForUpdates() {
@@ -81,38 +101,48 @@ async function checkForUpdates() {
             if (isNewerVersion(CURRENT_APP_VERSION, latestVersion)) {
                 showToast(`Update v${latestVersion} is available!`);
 
-                if (window.cordova && cordova.plugins.notification.local) {
+                // Native notification
+                if (window.cordova && cordova.plugins && cordova.plugins.notification && cordova.plugins.notification.local) {
                     cordova.plugins.notification.local.schedule({
                         id: 9999,
-                        title: "Update Available! 🚀",
-                        text: `Version v${latestVersion} of AU Smart Hub is ready. Tap to download!`,
+                        title: "Update Available",
+                        text: `v${latestVersion} of AU Smart Hub is ready to install!`,
                         foreground: true,
                         vibrate: true,
                         icon: 'file://img/au_smart_hub.png',
                         smallIcon: 'res://notify_icon'
                     });
                 } else if ("Notification" in window && Notification.permission === "granted") {
-                    new Notification("Update Available! 🚀", {
-                        body: `Version v${latestVersion} is ready to download.`,
+                    new Notification("Update Available", {
+                        body: `v${latestVersion} is ready to download.`,
                         vibrate: [200, 100, 200]
                     });
                 }
 
+                // Find APK asset (if uploaded to release)
+                let apkUrl = null;
+                if (data.assets && data.assets.length > 0) {
+                    const apkAsset = data.assets.find(a =>
+                        a.name.toLowerCase().endsWith('.apk') && a.browser_download_url
+                    );
+                    if (apkAsset) apkUrl = apkAsset.browser_download_url;
+                }
+
+                // Real changelog from GitHub release body
+                const changelog = data.body || '';
+
                 setTimeout(() => {
-                    showConfirm(
-                        "Update Available! 🚀",
-                        `A new version (v${latestVersion}) of AU Smart Hub is ready. Please update to get the latest features and bug fixes.`,
-                        "Download Update",
-                        () => {
-                            window.open(data.html_url, "_system");
-                        },
-                        "update" 
+                    showUpdateDialog(
+                        latestVersion,  // e.g. "1.0.17"
+                        changelog,      // real markdown release notes
+                        apkUrl,         // direct APK URL or null
+                        data.html_url   // fallback: GitHub release page
                     );
                 }, 1500);
             }
         }
     } catch (error) {
-        console.log("Could not check for updates (maybe offline).", error);
+        console.log("Could not check for updates (offline or rate-limited).", error);
     }
 }
 

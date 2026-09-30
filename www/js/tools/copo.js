@@ -10,7 +10,17 @@ let currentCopo = "mid1";
 let copoTab = 'input'; // Automatically start on the 'input' tab
 
 function switchCopoTab(tab) {
+    if (tab === "output") {
+        let data = copoData[currentCopo];
+        let totalVal = data.reduce((a, b) => a + b.val, 0);
+        let hasValue = data.some(d => d.val > 0);
+        if (!hasValue || totalVal === 0) {
+            showToast("Please enter CO marks first", "warning");
+            return;
+        }
+    }
     copoTab = tab;
+    copoMode = tab;
     render(); // Tell the app to redraw the screen with the new active tab
 }
 
@@ -26,10 +36,10 @@ function renderCOPO() {
                 <h1 class="text-xl font-bold tracking-tight text-gray-800 dark:text-gray-100">CO-PO Calculator</h1>
             </div>
             <div class="flex p-1 bg-gray-100/50 dark:bg-black/20 rounded-2xl backdrop-blur-md border border-gray-200 dark:border-white/10 shadow-inner">
-                <button onclick="copoMode='input'" class="px-3 py-1 rounded-xl text-sm font-bold transition-all duration-200 ${copoMode === 'input' ? 'bg-white dark:bg-[#1e293b] text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700' : 'bg-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
+                <button onclick="switchCopoTab('input')" class="px-3 py-1 rounded-xl text-sm font-bold transition-all duration-200 ${copoMode === 'input' ? 'bg-white dark:bg-[#1e293b] text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700' : 'bg-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
                     Input
                 </button>
-                <button onclick="copoMode='output'" class="px-3 py-1 rounded-xl text-sm font-bold transition-all duration-200 ${copoMode === 'output' ? 'bg-white dark:bg-[#1e293b] text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700' : 'bg-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
+                <button onclick="switchCopoTab('output')" class="px-3 py-1 rounded-xl text-sm font-bold transition-all duration-200 ${copoMode === 'output' ? 'bg-white dark:bg-[#1e293b] text-blue-600 dark:text-blue-400 shadow-sm border border-gray-100 dark:border-gray-700' : 'bg-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'}">
                     Analyze
                 </button>
             </div>
@@ -56,6 +66,7 @@ function renderCOPO() {
 function switchCopo(key) {
     currentCopo = key;
     copoMode = "input";
+    copoTab = "input";
     render();
 }
 
@@ -104,24 +115,42 @@ function renderCopoOutput(title, key) {
     let totalMax = data.reduce((a, b) => a + b.max, 0);
 
     return `
-        <div class="card">
-            <h2>${title}</h2>
+        <div class="card p-4">
+            <h2 class="text-base font-bold text-slate-900 dark:text-white mb-3">${title} Analysis</h2>
 
-            ${data.map((d, i) => {
-                let attain = (d.val / d.max) * 100 || 0;
-                let contrib = (d.val / totalVal) * 100 || 0;
-                return `
-                    <div class="flex justify-between mt-2">
-                        <span>CO ${i + 1}</span>
-                        <span>${attain.toFixed(2)}%</span>
-                        <span>${contrib.toFixed(2)}%</span>
-                    </div>
-                `;
-            }).join("")}
+            <div class="overflow-x-auto mb-3">
+                <table class="w-full text-xs text-left">
+                    <thead>
+                        <tr class="border-b border-slate-200 dark:border-slate-700/80 text-[11px] font-extrabold uppercase text-slate-400">
+                            <th class="py-2">Outcome</th>
+                            <th class="py-2 text-right">Marks</th>
+                            <th class="py-2 text-right">Attainment</th>
+                            <th class="py-2 text-right">Contribution</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 font-medium">
+                        ${data.map((d, i) => {
+                            let attain = (d.val / d.max) * 100 || 0;
+                            let contrib = (d.val / totalVal) * 100 || 0;
+                            return `
+                                <tr class="text-slate-700 dark:text-slate-200">
+                                    <td class="py-2.5 font-bold text-blue-600 dark:text-blue-400">CO ${i + 1}</td>
+                                    <td class="py-2.5 text-right font-mono">${d.val}/${d.max}</td>
+                                    <td class="py-2.5 text-right font-mono font-bold ${attain >= 50 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-500'}">${attain.toFixed(1)}%</td>
+                                    <td class="py-2.5 text-right font-mono">${contrib.toFixed(1)}%</td>
+                                </tr>
+                            `;
+                        }).join("")}
+                    </tbody>
+                </table>
+            </div>
 
-            <div>Total: ${totalVal}/${totalMax}</div>
+            <div class="flex items-center justify-between p-3 rounded-xl bg-slate-100 dark:bg-slate-800/60 font-bold text-xs">
+                <span>Total Score</span>
+                <span class="font-mono text-sm text-blue-600 dark:text-blue-400">${totalVal} / ${totalMax}</span>
+            </div>
 
-            <button onclick="copoMode='input'; render()" class="btn mt-3 w-full">Edit</button>
+            <button onclick="copoMode='input'; copoTab='input'; render()" class="btn mt-3 w-full">Edit Marks</button>
         </div>
     `;
 }
@@ -202,6 +231,14 @@ function validateCopo(key, i, input) {
 }
 
 function calculateCopo() {
+    let data = copoData[currentCopo];
+    let totalVal = data.reduce((a, b) => a + b.val, 0);
+    let hasValue = data.some(d => d.val > 0);
+    if (!hasValue || totalVal === 0) {
+        showToast("Please enter CO marks first", "warning");
+        return;
+    }
     copoMode = "output";
+    copoTab = "output";
     render();
 }

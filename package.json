@@ -1,7 +1,7 @@
 {
   "name": "com.aucse.smarthub",
   "displayName": "AU Smart Hub",
-  "version": "1.0.16",
+  "version": "1.0.18",
   "description": "AU Smart Hub is an all-in-one Android student productivity suite featuring CGPA Tracker, NPTEL Tracker, Smart Notes, Timetable, Assignment Manager, Scientific Calculator, Focus Timer, and more.",
   "main": "index.js",
   "scripts": {
@@ -25,11 +25,11 @@
   "author": "Amudhan Mohan",
   "license": "MIT",
   "devDependencies": {
-    "cordova-android": "^15.0.0",
+    "cordova-android": "^15.1.0",
     "cordova-plugin-device": "^3.0.0",
     "cordova-plugin-local-notification": "^1.2.3",
     "cordova-plugin-screen-orientation": "^3.0.4",
-    "cordova-plugin-splashscreen": "^6.0.1",
+    "cordova-plugin-vibration": "^3.1.1",
     "es6-promise-plugin": "^4.2.2",
     "tailwindcss": "^4.2.2"
   },
@@ -38,11 +38,12 @@
       "android"
     ],
     "plugins": {
-      "cordova-plugin-splashscreen": {},
       "cordova-plugin-screen-orientation": {},
       "cordova-plugin-local-notification": {
         "ANDROIDX_CORE_VERSION": "1.12.0"
-      }
+      },
+      "cordova-plugin-inappbrowser": {},
+      "cordova-plugin-vibration": {}
     }
   },
   "dependencies": {
@@ -56,6 +57,7 @@
     "bplist-parser": "^0.3.2",
     "braces": "^3.0.3",
     "cordova-common": "^6.0.0",
+    "cordova-plugin-inappbrowser": "^7.0.0",
     "cross-spawn": "^7.0.6",
     "dedent": "^1.7.2",
     "elementtree": "^0.1.7",
