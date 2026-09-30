@@ -6,15 +6,15 @@ function showToast(message, type = 'info') {
 
     let toast = document.createElement('div');
     toast.id = 'app-toast';
-    toast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 z-[9999] bg-slate-900/90 dark:bg-slate-100/90 backdrop-blur-md text-white dark:text-slate-900 px-5 py-2.5 rounded-full shadow-2xl text-xs font-bold tracking-wide flex items-center gap-2 max-w-[90vw] truncate transition-all duration-200';
+    toast.className = 'fixed bottom-22 inset-x-0 mx-auto z-[9999] bg-slate-900/90 dark:bg-slate-100/90 backdrop-blur-md text-white dark:text-slate-900 px-5 py-2.5 rounded-full shadow-2xl text-xs font-bold tracking-wide flex items-center justify-center gap-2 w-max max-w-[90vw] truncate transition-all duration-200 pointer-events-none';
 
-    let icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
-    toast.innerHTML = `${icon}<span>${escapeHtml(message)}</span>`;
+    let icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`;
+    toast.innerHTML = `${icon}<span class="truncate">${escapeHtml(message)}</span>`;
     document.body.appendChild(toast);
 
     setTimeout(() => {
         toast.style.opacity = '0';
-        toast.style.transform = 'translate(-50%, 14px) scale(0.95)';
+        toast.style.transform = 'translateY(14px) scale(0.95)';
         setTimeout(() => toast.remove(), 220);
     }, 2200);
 }

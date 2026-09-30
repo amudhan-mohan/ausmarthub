@@ -355,20 +355,30 @@ body.dark,
 
 /* Toast Notification Spring Animation */
 #app-toast {
+    position: fixed !important;
+    bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px)) !important;
+    left: 0 !important;
+    right: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    width: -moz-max-content !important;
+    width: max-content !important;
+    max-width: calc(100vw - 32px) !important;
+    translate: none !important; /* Disarm modern CSS translate property collision */
     animation: toastSpringUp 0.32s var(--ease-spring) both;
 }
 
 @keyframes toastSpringUp {
     0% {
         opacity: 0;
-        transform: translate(-50%, 18px) scale(0.92);
+        transform: translateY(18px) scale(0.92);
     }
     65% {
-        transform: translate(-50%, -2px) scale(1.02);
+        transform: translateY(-2px) scale(1.02);
     }
     100% {
         opacity: 1;
-        transform: translate(-50%, 0) scale(1);
+        transform: translateY(0) scale(1);
     }
 }
 
